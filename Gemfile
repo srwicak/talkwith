@@ -8,7 +8,7 @@ gem "kamal", require: false # Deploy this application anywhere as a Docker conta
 gem "nanoid" # Use nanoid for unique IDs [https://github.com/ruby-nanoid/nanoid]
 gem "propshaft" # The modern asset pipeline for Rails [https://github.com/rails/propshaft]
 gem "puma", ">= 5.0" # Use the Puma web server [https://github.com/puma/puma]
-gem "rails", "~> 8.0.0" # Bundle edge Rails instead: gem "rails", github: "rails/rails", branch: "main"
+gem "rails", "~> 8.0.1" # Bundle edge Rails instead: gem "rails", github: "rails/rails", branch: "main"
 gem "slim-rails" # Use slim as the templating engine
 # Use the database-backed adapters for Rails.cache, Active Job, and Action Cable
 gem "solid_cache"
