@@ -1,0 +1,130 @@
+#scheduleModal.fixed.inset-0.bg-gray-800.bg-opacity-50.flex.justify-center.items-center.opacity-0.pointer-events-none(data-schedules--bookings-target="scheduleModal" aria-hidden="true")
+  .bg-white.p-6.rounded.shadow-lg.max-w-md.w-full.dark:bg-gray-800
+    h2.text-xl.font-bold.mb-4.dark:text-white Schedule TalkWith 
+    ul.text-red-600.mb-4.font-semibold.list-disc.list-inside.text-xs
+      li Ensure your email address is valid for further communication.
+      li All fields are required.
+      li Appointments can be scheduled from tomorrow up to 2 months ahead.
+      li Each appointment must be between 15 and 120 minutes.
+      li Click the clock icon to select the time.
+      li Fields marked with (+) will be displayed on the calendar.
+
+    = form_with(model: @bookings, data: { action: "submit->schedules--bookings#submitAppointment" }) do |form|
+      // Name
+      .mb-4
+        = form.label :name, "Name (minimum 3 characters):", class: "block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+        = form.text_field :name, class: "bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500", placeholder: "Your Name", required: true, minlength: 3, "data-schedules--bookings-target": "field"
+        p.error-message.text-red-600.text-xs.font-bold(data-schedules--bookings-target="error")
+      
+      // Email
+      .mb-4
+        = form.label :email, "Email:", class: "block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+        = form.email_field :email, class: "bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500", placeholder: "Your Email", required: true, "data-schedules--bookings-target": "field"
+        p.error-message.text-red-600.text-xs.font-bold(data-schedules--bookings-target="error")
+      
+      // Date
+      .mb-4
+        = form.label :date, "(+)Date (MM/DD/YYYY):", class: "block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+        .relative
+          .absolute.inset-y-0.start-0.flex.items-center.ps-2.pointer-events-none
+            svg.w-4.h-4.text-gray-500.dark:text-gray-400(aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20")
+              path(d="M20 4a2 2 0 0 0-2-2h-2V1a1 1 0 0 0-2 0v1h-3V1a1 1 0 0 0-2 0v1H6V1a1 1 0 0 0-2 0v1H2a2 2 0 0 0-2 2v2h20V4ZM0 18a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8H0v10Zm5-8h10a1 1 0 0 1 0 2H5a1 1 0 0 1 0-2Z")
+          = form.text_field :date, 
+            class: "bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full ps-8 p-2 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500", placeholder: "Pick a date", data: { schedules__bookings_target: "dateInput" }, required: true, datepicker: true, "datepicker-autohide": true
+        p.error-message.text-red-600.text-xs.font-bold(data-schedules--bookings-target="errorDate")
+      
+      // Timeblock
+      .mb-4
+        .grid.grid-cols-2.gap-4
+
+          //Start Time
+          div
+            = form.label :start_time, "(+)Start time:", class: "block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+            .relative
+              .absolute.inset-y-0.end-0.top-0.flex.items-center.pe-2.pointer-events-none
+                svg.w-4.h-4.text-gray-500.dark:text-gray-400(aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24")
+                  path(fill-rule="evenodd" d="M2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10S2 17.523 2 12Zm11-4a1 1 0 1 0-2 0v4a1 1 0 0 0 .293.707l3 3a1 1 0 0 0 1.414-1.414L13 11.586V8Z" clip-rule="evenodd")
+              = form.time_field :start_time, class: "bg-gray-50 border leading-none border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500", required: true, "data-schedules--bookings-target": "startTime"
+          
+          // End Time
+          div
+            = form.label :end_time, "(+)End time:", class: "block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+            .relative
+              .absolute.inset-y-0.end-0.top-0.flex.items-center.pe-2.pointer-events-none
+                svg.w-4.h-4.text-gray-500.dark:text-gray-400(aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24")
+                  path(fill-rule="evenodd" d="M2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10S2 17.523 2 12Zm11-4a1 1 0 1 0-2 0v4a1 1 0 0 0 .293.707l3 3a1 1 0 0 0 1.414-1.414L13 11.586V8Z" clip-rule="evenodd")
+              = form.time_field :end_time, class: "bg-gray-50 border leading-none border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500", required: true, "data-schedules--bookings-target": "endTime"
+        p.error-message.text-red-600.text-xs.font-bold(data-schedules--bookings-target="errorTime")
+
+      // Timezone
+      // List from: https://gist.github.com/nodesocket/3919205
+      .mb-4
+        = form.label :timezone_offset, "Select your timezone:", class: "block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+        = form.select :timezone_offset, 
+        { "Recommended Timezones" => [  ["(GMT +7:00) Bangkok, Hanoi, Jakarta", "Asia/Jakarta"],
+            ["(GMT -8:00) Pacific Time (US & Canada)", "America/Los_Angeles"],
+            ["(GMT -7:00) Mountain Time (US & Canada)", "America/Denver"],
+            ["(GMT -6:00) Central Time (US & Canada), Mexico City", "America/Chicago"],
+            ["(GMT -5:00) Eastern Time (US & Canada), Bogota, Lima", "America/New_York"],
+            ["(GMT) Western Europe Time, London, Lisbon, Casablanca", "Europe/London"],
+            ["(GMT +9:00) Tokyo, Seoul, Osaka, Sapporo, Yakutsk", "Asia/Tokyo"] ],
+          "All Timezones" => [  ["(GMT -12:00) Eniwetok, Kwajalein", "Etc/GMT+12"],
+            ["(GMT -11:00) Midway Island, Samoa", "Pacific/Midway"],
+            ["(GMT -10:00) Hawaii", "Pacific/Honolulu"],
+            ["(GMT -9:30) Taiohae", "Pacific/Marquesas"],
+            ["(GMT -9:00) Alaska", "America/Anchorage"],
+            ["(GMT -8:00) Pacific Time (US & Canada)", "America/Los_Angeles"],
+            ["(GMT -7:00) Mountain Time (US & Canada)", "America/Denver"],
+            ["(GMT -6:00) Central Time (US & Canada), Mexico City", "America/Chicago"],
+            ["(GMT -5:00) Eastern Time (US & Canada), Bogota, Lima", "America/New_York"],
+            ["(GMT -4:30) Caracas", "America/Caracas"],
+            ["(GMT -4:00) Atlantic Time (Canada), Caracas, La Paz", "America/Halifax"],
+            ["(GMT -3:30) Newfoundland", "America/St_Johns"],
+            ["(GMT -3:00) Brazil, Buenos Aires, Georgetown", "America/Sao_Paulo"],
+            ["(GMT -2:00) Mid-Atlantic", "Atlantic/South_Georgia"],
+            ["(GMT -1:00) Azores, Cape Verde Islands", "Atlantic/Azores"],
+            ["(GMT +1:00) Brussels, Copenhagen, Madrid, Paris", "Europe/Paris"],
+            ["(GMT +2:00) Kaliningrad, South Africa", "Africa/Johannesburg"],
+            ["(GMT +3:00) Baghdad, Riyadh, Moscow, St. Petersburg", "Europe/Moscow"],
+            ["(GMT +3:30) Tehran", "Asia/Tehran"],
+            ["(GMT +4:00) Abu Dhabi, Muscat, Baku, Tbilisi", "Asia/Dubai"],
+            ["(GMT +4:30) Kabul", "Asia/Kabul"],
+            ["(GMT +5:00) Ekaterinburg, Islamabad, Karachi, Tashkent", "Asia/Karachi"],
+            ["(GMT +5:30) Bombay, Calcutta, Madras, New Delhi", "Asia/Kolkata"],
+            ["(GMT +5:45) Kathmandu, Pokhara", "Asia/Kathmandu"],
+            ["(GMT +6:00) Almaty, Dhaka, Colombo", "Asia/Dhaka"],
+            ["(GMT +6:30) Yangon, Mandalay", "Asia/Yangon"],
+            ["(GMT +7:00) Bangkok, Hanoi, Jakarta", "Asia/Jakarta"],
+            ["(GMT +8:00) Beijing, Perth, Singapore, Hong Kong", "Asia/Singapore"],
+            ["(GMT +8:45) Eucla", "Australia/Eucla"],
+            ["(GMT +9:00) Tokyo, Seoul, Osaka, Sapporo, Yakutsk", "Asia/Tokyo"],
+            ["(GMT +9:30) Adelaide, Darwin", "Australia/Adelaide"],
+            ["(GMT +10:00) Eastern Australia, Guam, Vladivostok", "Australia/Sydney"],
+            ["(GMT +10:30) Lord Howe Island", "Australia/Lord_Howe"],
+            ["(GMT +11:00) Magadan, Solomon Islands, New Caledonia", "Asia/Magadan"],
+            ["(GMT +11:30) Norfolk Island", "Australia/Norfolk"],
+            ["(GMT +12:00) Auckland, Wellington, Fiji, Kamchatka", "Pacific/Auckland"],
+            ["(GMT +12:45) Chatham Islands", "Pacific/Chatham"],
+            ["(GMT +13:00) Apia, Nukualofa", "Pacific/Apia"],
+            ["(GMT +14:00) Line Islands, Tokelau", "Pacific/Kiritimati"] ] },
+          {},
+          class: "bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500", required: true
+        p.error-message.text-red-600.text-xs.font-bold(data-schedules--bookings-target="error")
+
+      // Subject
+      .mb-4
+        = form.label :subject, "(+)Subject (minimum 3 characters):", class: "block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+        = form.text_field :subject, class: "bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500", placeholder: "Appointment Subject", required: true, minlength: 3
+        p.error-message.text-red-600.text-xs.font-bold(data-schedules--bookings-target="error")
+        
+      // Description
+      .mb-4
+        = form.label :description, "Description (minimum 20 characters):", class: "block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+        = form.textarea :description, rows: "4", class: "block p-2 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500", required: true, placeholder: "Description of Appointment", minlength: 20
+        p.error-message.text-red-600.text-xs.font-bold(data-schedules--bookings-target="error")
+          
+
+      .flex.justify-end
+        button#closeModalBtn.px-4.py-2.bg-gray-400.hover:bg-gray-500.rounded.text-sm(data-action="click->schedules--bookings#hideFormModal") Cancel
+        button.ml-2.px-4.py-2.bg-blue-500.text-white.hover:bg-blue-600.rounded.text-sm(data-action="click->schedules--boookings#submitAppointment") Add
+

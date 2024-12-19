@@ -1,0 +1,19 @@
+.break-message
+  .flex.items-center.justify-center.h-screen.bg-yellow-100
+    .text-yellow-600.border-l-8.border-yellow-600.p-2 
+      p.font-semibold.text-yellow-600 🚫 This page is not accessible on your device.
+      p.text-xs.mt-2 📱 Please use a device with a larger screen for a better experience.
+
+.app-content
+  .max-w-4xl.mx-auto.mt-8.px-2
+    == yield :content
+
+- content_for :additional_head
+  link href="https://cdn.jsdelivr.net/npm/remixicon@4.5.0/fonts/remixicon.min.css" rel="stylesheet"
+  
+  javascript:
+    if (localStorage.getItem("color-theme") === "dark" || (!("color-theme" in localStorage) && window.matchMedia("(prefers-color-scheme: dark)").matches)) {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }

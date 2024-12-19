@@ -1,0 +1,22 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* breakpoint */
+@media (max-width: 359px) {
+  .app-content {
+    display: none;
+  }
+  .break-message {
+    display: block;
+  }
+}
+
+@media (min-width: 360px) {
+  .app-content {
+    display: block;
+  }
+  .break-message {
+    display: none;
+  }
+}

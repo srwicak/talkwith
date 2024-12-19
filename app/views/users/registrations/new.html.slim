@@ -1,0 +1,32 @@
+.flex.items-center.h-screen
+  .mx-auto.max-w-md.bg-gray-50.shadow-lg.rounded-lg.p-8
+    .text-center
+      h1.font-extrabold.text-3xl.text-blue-600.mb-2 Register Now!
+
+    .my-4
+      - if alert = flash[:alert]
+        p#alert.py-2.px-4.bg-red-50.text-red-500.font-medium.rounded-lg.text-center = alert
+
+      - if notice = flash[:notice]
+        p#notice.py-2.px-4.bg-green-50.text-green-500.font-medium.rounded-lg.text-center = notice
+
+    = form_with model: @user, url: user_registration_path, class: "space-y-6" do |form|
+      div
+        = form.label :email_address, "Email Address", class: "block text-sm font-semibold text-gray-700"
+        = form.email_field :email_address, required: true, autofocus: true, autocomplete: "username", placeholder: "you@example.com", class: "block shadow-sm rounded-md border-gray-300 focus:ring-blue-500 focus:border-blue-500 px-4 py-3 w-full"
+
+      div
+        = form.label :password, "Password", class: "block text-sm font-semibold text-gray-700"
+        = form.password_field :password, required: true, placeholder: "Enter your password", maxlength: 32, class: "block shadow-sm rounded-md border-gray-300 focus:ring-blue-500 focus:border-blue-500 px-4 py-3 w-full"
+      
+      div
+        = form.label :password_confirmation, "Password", class: "block text-sm font-semibold text-gray-700"
+        = form.password_field :password_confirmation, required: true,  placeholder: "Re-enter your password", maxlength: 32, class: "block shadow-sm rounded-md border-gray-300 focus:ring-blue-500 focus:border-blue-500 px-4 py-3 w-full"
+
+      div
+        = form.submit "Sign Up", class: "w-full py-3 px-6 rounded-md bg-blue-600 text-white font-bold text-lg hover:bg-blue-700 transition duration-200"
+
+    .text-center.mt-6
+      p.text-sm.text-gray-500
+        | Already have an account? 
+        = link_to "Sign in now", new_user_session_path, class: "text-blue-600 hover:underline font-semibold"

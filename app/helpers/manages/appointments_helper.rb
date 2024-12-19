@@ -1,0 +1,2 @@
+module Manages::AppointmentsHelper
+end
