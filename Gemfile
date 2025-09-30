@@ -2,6 +2,9 @@ source "https://rubygems.org"
 
 gem "blueprinter" # JSON API serialization
 gem "bootsnap", require: false # Reduces boot times through caching; required in config/boot.rb
+# API integrations
+gem "google-apis-calendar_v3" # Google Calendar API integration
+gem "googleauth" # Google authentication
 gem "icalendar" # Enables support for iCalendar [https://github.com/icalendar/icalendar]
 gem "importmap-rails" # Use JavaScript with ESM import maps [https://github.com/rails/importmap-rails]
 gem "kamal", require: false # Deploy this application anywhere as a Docker container [https://kamal-deploy.org]

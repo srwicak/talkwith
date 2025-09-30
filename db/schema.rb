@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2024_12_03_110559) do
+ActiveRecord::Schema[8.0].define(version: 2025_09_30_005444) do
   create_table "bookings", force: :cascade do |t|
     t.string "name", null: false
     t.string "email", null: false
@@ -24,6 +24,9 @@ ActiveRecord::Schema[8.0].define(version: 2024_12_03_110559) do
     t.string "slug"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "google_calendar_event_id"
+    t.datetime "last_synced_at"
+    t.index ["google_calendar_event_id"], name: "index_bookings_on_google_calendar_event_id"
   end
 
   create_table "sessions", force: :cascade do |t|

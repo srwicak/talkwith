@@ -2,6 +2,26 @@
 #
 # Table name: bookings
 #
+#  id                       :integer          not null, primary key
+#  description              :text             not null
+#  email                    :string           not null
+#  end_time                 :datetime         not null
+#  is_approved              :boolean          default(FALSE)
+#  last_synced_at           :datetime
+#  name                     :string           not null
+#  secret_key               :string
+#  slug                     :string
+#  start_time               :datetime         not null
+#  subject                  :string           not null
+#  timezone_offset          :string
+#  created_at               :datetime         not null
+#  updated_at               :datetime         not null
+#  google_calendar_event_id :string
+#
+# Indexes
+#
+#  index_bookings_on_google_calendar_event_id  (google_calendar_event_id)
+#
 #  id              :integer          not null, primary key
 #  description     :text             not null
 #  email           :string           not null
@@ -25,7 +45,7 @@ class Booking < ApplicationRecord
 
   validates :name, presence: true, length: { minimum: 3 }
   validates :email, presence: true, format: { with: URI::MailTo::EMAIL_REGEXP }
-  validates :date, presence: true
+  validates :date, presence: true, if: :new_record?
   validates :start_time, presence: true
   validates :end_time, presence: true
   validates :subject, presence: true, length: { minimum: 3 }
@@ -37,9 +57,30 @@ class Booking < ApplicationRecord
 
   before_save :generate_key
   before_save :convert_times_to_utc
+  before_save :auto_approve_special_bookings
+
+  # Google Calendar sync callbacks
+  after_commit :sync_with_google_calendar, on: [:create, :update], if: :should_sync_with_google?
+  after_commit :remove_from_google_calendar, on: :destroy, if: :google_calendar_event_id?
 
   # Encrypt the name, email, subject, description and secret_key field before saving to the database using ActiveRecord's encrypts method
   encrypts :name, :email, :subject, :description, :secret_key
+
+  # Check if this is a special UDI x ITB booking
+  def special_booking?
+    subject.include?("[UDIxITB]")
+  end
+
+  # Get formatted duration
+  def duration_minutes
+    return 0 unless start_time && end_time
+    ((end_time - start_time) / 60).to_i
+  end
+
+  # Check if this booking was synced from Google Calendar
+  def from_google_calendar?
+    google_calendar_event_id.present?
+  end
 
   private
 
@@ -48,6 +89,9 @@ class Booking < ApplicationRecord
   end
 
   def valid_date_range
+    return unless date.present? # Skip validation if date is not set (for existing records)
+    return if from_google_calendar? # Skip date range validation for Google Calendar events
+    
     parsed_date = Date.strptime(date, "%m/%d/%Y") rescue nil
     if parsed_date.nil?
       errors.add(:date, "is not a valid date format (must be mm/dd/yyyy)")
@@ -63,7 +107,8 @@ class Booking < ApplicationRecord
       duration = (end_time - start_time) / 60
       if duration < 15
         errors.add(:end_time, "must be at least 15 minutes")
-      elsif duration > 120
+      elsif duration > 120 && !from_google_calendar?
+        # Skip 2-hour limit for Google Calendar synced events
         errors.add(:end_time, "cannot be more than 2 hours")
       end
     else
@@ -84,8 +129,36 @@ class Booking < ApplicationRecord
   end
 
   def convert_times_to_utc
+    return unless date.present? && start_time.present? && end_time.present?
+    
     timezone = ActiveSupport::TimeZone[timezone_offset]
     self.start_time = timezone.parse("#{date} #{start_time}").utc
     self.end_time = timezone.parse("#{date} #{end_time}").utc
+  end
+
+  def auto_approve_special_bookings
+    if subject.include?("[UDIxITB]")
+      self.is_approved = true
+    end
+  end
+
+  def should_sync_with_google?
+    # Only sync approved bookings to Google Calendar
+    # Skip if it already came from Google Calendar (to avoid infinite loops)
+    is_approved? && is_approved_changed? && google_calendar_event_id.blank?
+  end
+
+  def sync_with_google_calendar
+    return unless is_approved?
+    return if google_calendar_event_id.present? # Skip if already synced or came from Google
+    
+    Rails.logger.info "Syncing booking #{id} to Google Calendar"
+    SyncGoogleCalendarJob.perform_later(self)
+  end
+
+  def remove_from_google_calendar
+    return unless google_calendar_event_id.present?
+    
+    RemoveGoogleCalendarEventJob.perform_later(google_calendar_event_id)
   end
 end

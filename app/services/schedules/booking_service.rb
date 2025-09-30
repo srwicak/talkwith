@@ -36,12 +36,19 @@ module Schedules
       booking = Booking.new(converted_params)
 
       if booking.valid? && booking.save
-        {
+        result = {
           status: "success",
           message: "Booking created successfully",
           booking: booking,
           show_url: Rails.application.routes.url_helpers.appointment_url(booking.slug)
         }
+        
+        # Sync approved bookings immediately to Google Calendar
+        if booking.is_approved?
+          SyncGoogleCalendarJob.perform_later(booking)
+        end
+        
+        result
       elsif booking.errors[:base].include?("Booking overlaps with an approved schedule")
         {
           status: "conflict",

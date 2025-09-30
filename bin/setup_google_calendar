@@ -1,0 +1,69 @@
+#!/bin/bash
+
+echo "🚀 TalkWith Google Calendar Setup Helper"
+echo "========================================"
+echo ""
+
+echo "📋 Checklist setup Google Calendar:"
+echo ""
+echo "1. ✅ Google Cloud Console Setup"
+echo "   - Buat project baru di https://console.cloud.google.com/"
+echo "   - Enable Google Calendar API"
+echo ""
+echo "2. ✅ Service Account Setup"
+echo "   - Buat service account 'talkwith-calendar'"
+echo "   - Download JSON key file"
+echo "   - Simpan sebagai config/google_service_account.json"
+echo ""
+echo "3. 📅 Calendar Setup"
+echo "   - Buat calendar baru 'TalkWith Appointments' di Google Calendar"
+echo "   - Copy Calendar ID dari Settings > Integrate calendar"
+echo "   - Share calendar dengan service account email"
+echo ""
+echo "4. 🔑 Rails Credentials Setup"
+echo "   - Edit credentials dengan: EDITOR='nano' bin/rails credentials:edit"
+echo "   - Tambahkan:"
+echo "     google:"
+echo "       calendar_id: 'your-calendar-id@group.calendar.google.com'"
+echo ""
+
+# Check if service account file exists
+if [ -f "config/google_service_account.json" ]; then
+    echo "✅ Service account file found: config/google_service_account.json"
+    
+    # Extract service account email from JSON
+    SERVICE_EMAIL=$(grep -o '"client_email"[[:space:]]*:[[:space:]]*"[^"]*"' config/google_service_account.json | sed 's/.*"client_email"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/')
+    
+    if [ ! -z "$SERVICE_EMAIL" ]; then
+        echo "📧 Service Account Email: $SERVICE_EMAIL"
+        echo ""
+        echo "🔗 Share calendar ini dengan email di atas:"
+        echo "   - Buka Google Calendar"
+        echo "   - Settings calendar TalkWith Appointments"
+        echo "   - Add people: $SERVICE_EMAIL"
+        echo "   - Permission: Make changes to events"
+    fi
+else
+    echo "❌ Service account file not found!"
+    echo "   Download JSON key dari Google Cloud Console"
+    echo "   Simpan sebagai: config/google_service_account.json"
+fi
+
+echo ""
+echo "🧪 Test setup dengan:"
+echo "   bin/rails console"
+echo "   > Schedules::GoogleCalendarService.new"
+echo ""
+echo "🎯 Management interface:"
+echo "   http://localhost:3000/manage"
+echo ""
+echo "🔐 Admin login:"
+echo "   Email: me@sandyrw.com"
+echo "   Password: admin123"
+echo "   Login URL: http://localhost:3000/signin"
+echo ""
+echo "✨ Features:"
+echo "   - Approve/reject appointments (sync TO Google Calendar)"
+echo "   - Manual sync FROM Google Calendar (priority to Google Calendar)"
+echo "   - Google Calendar events override TalkWith data"
+echo ""

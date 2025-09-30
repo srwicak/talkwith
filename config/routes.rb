@@ -18,13 +18,23 @@ Rails.application.routes.draw do
     resources :appointments, param: :slug, only: %i[show update] do
       member do
         get :download_ics
+        delete :cancel
       end
     end
   end
 
   scope "/" do
-    scope "/manage" do
-      get "/", to: "manages/appointments#index", as: "index_manage_appointment"
+    # Google Calendar Management - unified route
+    get "manage", to: "manages#index", as: "manage_appointments"
+    resources :manages, only: [] do
+      member do
+        patch :approve
+        delete :reject
+      end
+      collection do
+        post :sync_from_google
+        post :sync_to_google
+      end
     end
 
     get "appointments", to: redirect("/")

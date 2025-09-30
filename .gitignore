@@ -38,3 +38,6 @@
 
 # Igonre node_modules
 /node_modules/
+
+# Google Service Account credentials
+config/google_service_account.json

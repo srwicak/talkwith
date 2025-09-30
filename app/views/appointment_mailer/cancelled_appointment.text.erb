@@ -1,0 +1,28 @@
+Hi <%= @name %>,
+
+<% if @cancelled_by == 'user' %>
+Your appointment has been successfully cancelled as requested.
+<% else %>
+We regret to inform you that your appointment has been rejected by the administrator.
+<% end %>
+
+CANCELLED APPOINTMENT DETAILS:
+Subject: <%= @appointment.subject %>
+Date: <%= @start_time.strftime("%A, %B %d, %Y") %>
+Time: <%= @start_time.strftime("%I:%M %p") %> - <%= @end_time.strftime("%I:%M %p") %>
+<% if @appointment.description.present? %>
+Description: <%= @appointment.description %>
+<% end %>
+
+<% if @cancelled_by == 'user' %>
+If you need to schedule a new appointment, please visit our booking page.
+<% else %>
+If you have any questions about this rejection or would like to reschedule, please contact us directly.
+<% end %>
+
+Best regards,
+The TalkWith Team
+
+---
+This is an automated notification about your appointment cancellation.
+Please do not reply to this email.

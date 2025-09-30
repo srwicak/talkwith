@@ -1,24 +1,89 @@
 <div class="email-container">
   <div class="header">
+  <% if @is_special_booking %>
+    <h2>Hi <%= @name %>, Your Appointment is Confirmed! 🎉</h2>
+    <div style="background: linear-gradient(90deg, #4CAF50, #2E7D32); color: white; padding: 10px; border-radius: 5px; margin: 10px 0;">
+      <strong>✅ AUTO-APPROVED</strong> - UDI x ITB Special Booking
+    </div>
+  <% else %>
     <h2>Hi <%= @name %>, Your Appointment Details</h2>
+  <% end %>
   </div>
+  
   <div class="details">
-    <p><strong>Subject: </strong><%= @appointment.subject %></p>
-    <p><strong>Date: </strong><%= @start_time.strftime('%B %dth, %Y') %></p>
-    <p>
-      <strong>Time: </strong>
-      <%= @start_time.strftime('%H:%M') %> - <%= @end_time.strftime('%H:%M') %>
-      (<%= @start_time.strftime('%Z') %>)
-    </p>
-    <p><strong>Description: </strong><%= @appointment.description %>
-    </p>
-    <p><strong>Your secret key: </strong><%= @appointment.secret_key %></p>
+    <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin: 15px 0;">
+      <h3 style="margin-top: 0; color: #333;">📅 Appointment Details</h3>
+      
+      <p><strong>Subject:</strong> <%= @appointment.subject %></p>
+      <p><strong>Date:</strong> <%= @start_time.strftime('%A, %B %d, %Y') %></p>
+      <p><strong>Time:</strong> 
+        <%= @start_time.strftime('%I:%M %p') %> - <%= @end_time.strftime('%I:%M %p') %>
+        (<%= @start_time.strftime('%Z') %>)
+      </p>
+      <p><strong>Duration:</strong> <%= @appointment.duration_minutes %> minutes</p>
+      
+      <% if @appointment.description.present? %>
+        <p><strong>Description:</strong></p>
+        <div style="background: white; padding: 10px; border-left: 4px solid #4CAF50; margin: 5px 0;">
+          <%= simple_format(@appointment.description) %>
+        </div>
+      <% end %>
+    </div>
+
+    <% if @is_special_booking %>
+      <div style="background: #e8f5e8; padding: 15px; border-radius: 8px; margin: 15px 0; border: 2px solid #4CAF50;">
+        <h3 style="margin-top: 0; color: #2E7D32;">🎥 Meeting Information</h3>
+        <p><strong>Zoom Meeting:</strong></p>
+        <div style="background: white; padding: 10px; border-radius: 5px;">
+          <p><strong>Meeting ID:</strong> 834 951 2627</p>
+          <p><strong>Passcode:</strong> fS2XXP</p>
+          <p><strong>Join URL:</strong> <a href="https://zoom.us/j/8349512627?pwd=fS2XXP" style="color: #0066cc;">https://zoom.us/j/8349512627?pwd=fS2XXP</a></p>
+        </div>
+        <p style="font-size: 12px; color: #666; margin-top: 10px;">
+          💡 This is a special UDImpact ITB Hub 1:1 coaching session. The Zoom link will be active 5 minutes before the scheduled time.
+        </p>
+      </div>
+    <% end %>
+
+    <div style="background: #fff3cd; padding: 15px; border-radius: 8px; margin: 15px 0; border-left: 4px solid #ffc107;">
+      <h3 style="margin-top: 0; color: #856404;">🔐 Important Information</h3>
+      <p><strong>Your Secret Key:</strong> <code style="background: #f8f9fa; padding: 2px 5px; border-radius: 3px;"><%= @appointment.secret_key %></code></p>
+      <p style="font-size: 14px; color: #666;">Keep this secret key safe! You'll need it to access your appointment details and make any changes.</p>
+    </div>
+
+    <div style="background: #d1ecf1; padding: 15px; border-radius: 8px; margin: 15px 0; border-left: 4px solid #17a2b8;">
+      <h3 style="margin-top: 0; color: #0c5460;">📋 Next Steps</h3>
+      <ul style="margin: 0; padding-left: 20px;">
+        <li>Click the button below to view your appointment details</li>
+        <li>Download the calendar file (.ics) to add this to your calendar</li>
+        <% if @is_special_booking %>
+          <li>Join the Zoom meeting using the provided link 5-10 minutes early</li>
+        <% end %>
+        <li>Contact us if you need to make any changes</li>
+      </ul>
+    </div>
   </div>
-  <div class="btn-container">
-    <a href="<%= appointment_url(@appointment.slug) %>" class="btn">
-      View Appointment
+  
+  <div class="btn-container" style="text-align: center; margin: 30px 0;">
+    <a href="<%= @show_url %>" class="btn" style="display: inline-block; text-decoration: none; padding: 12px 25px; background: #4caf50; color: #fff; border-radius: 5px; font-size: 16px; font-weight: bold; margin: 5px;">
+      📄 View Appointment Details
+    </a>
+    <br>
+    <a href="<%= @show_url %>?download=ics&secret_key=<%= @appointment.secret_key %>" class="btn" style="display: inline-block; text-decoration: none; padding: 12px 25px; background: #2196F3; color: #fff; border-radius: 5px; font-size: 16px; font-weight: bold; margin: 5px;">
+      📅 Add to Calendar (.ics)
     </a>
   </div>
-  <p>If you have any questions, feel free to contact <a href="mailto:me@sandyrw.com">me</a>.</p>
-  <img class="stamp" src="https://prangko.app/stamp/track/<%=@appointment.slug%>.png">
+
+  <div style="border-top: 1px solid #eee; padding-top: 20px; margin-top: 30px;">
+    <p style="font-size: 14px; color: #666; text-align: center;">
+      Status: <strong style="color: <%= @is_special_booking ? '#4caf50' : '#ff9800' %>;">
+        <%= @is_special_booking ? '✅ Approved' : '⏳ Pending Approval' %>
+      </strong>
+    </p>
+    <p style="font-size: 14px; color: #666; text-align: center;">
+      If you have any questions, feel free to contact <a href="mailto:me@sandyrw.com" style="color: #4caf50;">me@sandyrw.com</a>
+    </p>
+  </div>
+  
+  <img class="stamp" src="https://prangko.app/stamp/track/<%=@appointment.slug%>.png" style="position: absolute; bottom: 20px; right: 20px; height: 80px; width: 80px;">
 </div>

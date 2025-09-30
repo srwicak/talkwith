@@ -1,0 +1,145 @@
+<div class="max-w-6xl mx-auto p-6">
+  <!-- Header with logout -->
+  <div class="flex justify-between items-center mb-6">
+    <h1 class="text-3xl font-bold">Appointment Management</h1>
+    <div class="flex gap-3">
+      <%= button_to "� Sync TO Google", sync_to_google_manages_path, 
+          method: :post, 
+          class: "bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded",
+          data: { confirm: "Sync pending appointments to Google Calendar?" } %>
+      <%= button_to "📥 Sync FROM Google", sync_from_google_manages_path, 
+          method: :post, 
+          class: "bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded",
+          data: { confirm: "Import events from Google Calendar?" } %>
+      <%= link_to "🚪 Logout", destroy_user_session_path, 
+          method: :delete,
+          class: "bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded" %>
+    </div>
+  </div>
+  
+  <!-- Pending Appointments -->
+  <div class="mb-8">
+    <h2 class="text-2xl font-semibold mb-4 text-orange-600">Pending Appointments (<%= @pending_bookings.count %>)</h2>
+    
+    <% if @pending_bookings.any? %>
+      <div class="bg-white shadow-md rounded-lg overflow-hidden">
+        <table class="min-w-full divide-y divide-gray-200">
+          <thead class="bg-gray-50">
+            <tr>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Subject</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date & Time</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Duration</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+            </tr>
+          </thead>
+          <tbody class="bg-white divide-y divide-gray-200">
+            <% @pending_bookings.each do |booking| %>
+              <tr>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <div class="text-sm font-medium text-gray-900"><%= booking.name %></div>
+                  <div class="text-sm text-gray-500"><%= booking.email %></div>
+                </td>
+                <td class="px-6 py-4">
+                  <div class="text-sm text-gray-900"><%= booking.subject %></div>
+                  <% if booking.special_booking? %>
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                      UDI x ITB
+                    </span>
+                  <% end %>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  <%= booking.start_time.in_time_zone(booking.timezone_offset || "Asia/Jakarta").strftime("%d %B %Y") %><br>
+                  <%= booking.start_time.in_time_zone(booking.timezone_offset || "Asia/Jakarta").strftime("%H:%M") %> - 
+                  <%= booking.end_time.in_time_zone(booking.timezone_offset || "Asia/Jakarta").strftime("%H:%M") %>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <%= booking.duration_minutes %> minutes
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                  <%= button_to "Approve", approve_manage_path(booking), 
+                      method: :patch, 
+                      class: "text-green-600 hover:text-green-900 mr-3 bg-transparent border-none cursor-pointer",
+                      data: { confirm: "Are you sure you want to approve this appointment?" } %>
+                  <%= button_to "Reject", reject_manage_path(booking), 
+                      method: :delete, 
+                      class: "text-red-600 hover:text-red-900 bg-transparent border-none cursor-pointer",
+                      data: { confirm: "Are you sure you want to reject this appointment?" } %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    <% else %>
+      <div class="bg-gray-50 p-6 rounded-lg">
+        <p class="text-gray-500">No pending appointments.</p>
+      </div>
+    <% end %>
+  </div>
+
+  <!-- Approved Appointments -->
+  <div>
+    <h2 class="text-2xl font-semibold mb-4 text-green-600">Approved Appointments (<%= @approved_bookings.count %>)</h2>
+    
+    <% if @approved_bookings.any? %>
+      <div class="bg-white shadow-md rounded-lg overflow-hidden">
+        <table class="min-w-full divide-y divide-gray-200">
+          <thead class="bg-gray-50">
+            <tr>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Subject</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date & Time</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Google Cal</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+            </tr>
+          </thead>
+          <tbody class="bg-white divide-y divide-gray-200">
+            <% @approved_bookings.each do |booking| %>
+              <tr>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <div class="text-sm font-medium text-gray-900"><%= booking.name %></div>
+                  <div class="text-sm text-gray-500"><%= booking.email %></div>
+                </td>
+                <td class="px-6 py-4">
+                  <div class="text-sm text-gray-900"><%= booking.subject %></div>
+                  <% if booking.special_booking? %>
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                      UDI x ITB
+                    </span>
+                  <% end %>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  <%= booking.start_time.in_time_zone(booking.timezone_offset || "Asia/Jakarta").strftime("%d %B %Y") %><br>
+                  <%= booking.start_time.in_time_zone(booking.timezone_offset || "Asia/Jakarta").strftime("%H:%M") %> - 
+                  <%= booking.end_time.in_time_zone(booking.timezone_offset || "Asia/Jakarta").strftime("%H:%M") %>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <% if booking.google_calendar_event_id.present? %>
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                      ✓ Synced
+                    </span>
+                  <% else %>
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                      ⏳ Pending
+                    </span>
+                  <% end %>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                  <%= button_to "❌ Cancel", reject_manage_path(booking), 
+                      method: :delete, 
+                      class: "text-red-600 hover:text-red-900 bg-transparent border-none cursor-pointer",
+                      data: { confirm: "Are you sure you want to cancel this appointment? This will also remove it from Google Calendar." } %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    <% else %>
+      <div class="bg-gray-50 p-6 rounded-lg">
+        <p class="text-gray-500">No approved appointments.</p>
+      </div>
+    <% end %>
+  </div>
+</div>

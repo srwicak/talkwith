@@ -26,8 +26,13 @@
         span.font-semibold Status: 
         span #{@appointment_details[:status]}
 
-      .mt-4.flex
-        = link_to "Download Appointment (.ics)", download_ics_appointment_path(@appointment.slug, secret_key: @appointment.secret_key), class: "focus:outline-none text-white bg-green-700 hover:bg-green-800 focus:ring-4 focus:ring-green-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-green-600 dark:hover:bg-green-700 dark:focus:ring-green-800"
+      .mt-4.flex.flex-wrap.gap-2
+        = link_to "Download Appointment (.ics)", download_ics_appointment_path(@appointment.slug, secret_key: @appointment.secret_key), class: "focus:outline-none text-white bg-green-700 hover:bg-green-800 focus:ring-4 focus:ring-green-300 font-medium rounded-lg text-sm px-5 py-2.5 dark:bg-green-600 dark:hover:bg-green-700 dark:focus:ring-green-800"
+
+        - if @appointment.start_time > 2.hours.from_now
+          = link_to "Cancel Appointment", cancel_appointment_path(@appointment.slug, secret_key: @appointment.secret_key), method: :delete, class: "focus:outline-none text-white bg-red-700 hover:bg-red-800 focus:ring-4 focus:ring-red-300 font-medium rounded-lg text-sm px-5 py-2.5 dark:bg-red-600 dark:hover:bg-red-700 dark:focus:ring-red-800", data: { confirm: "Are you sure you want to cancel this appointment? This action cannot be undone and will remove it from all calendars." }
+        - else
+          .text-yellow-300.text-sm.italic Cannot cancel - too close to start time or appointment has passed
 
         // TODO: Add edit appointment button
         / = button_to "Edit Appointment", '#', class: "focus:outline-none text-white bg-yellow-400 hover:bg-yellow-500 focus:ring-4 focus:ring-yellow-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:focus:ring-yellow-900", data: { action: 'click->modal#open' }
