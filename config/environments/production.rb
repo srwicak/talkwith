@@ -53,12 +53,6 @@ Rails.application.configure do
   config.active_job.queue_adapter = :solid_queue
   config.solid_queue.connects_to = { database: { writing: :queue } }
 
-  # Add SolidQueue configuration for better reliability
-  config.solid_queue.supervisor = true
-  config.solid_queue.processes = 2
-  config.solid_queue.polling_interval = 1
-  config.solid_queue.silence_polling = true
-
   # Ignore bad email addresses and do not raise email delivery errors.
   # Set this to true and configure the email server for immediate delivery to raise delivery errors.
   # config.action_mailer.raise_delivery_errors = false
