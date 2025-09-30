@@ -9,7 +9,7 @@ module Users
     def create
       if user = User.authenticate_by(params.permit(:email_address, :password))
         start_new_session_for user
-        redirect_to index_manage_appointment_path
+        redirect_to manage_appointments_path
       else
         redirect_to new_user_session_path, alert: "Try another email address or password."
       end
