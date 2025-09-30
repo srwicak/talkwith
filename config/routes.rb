@@ -45,6 +45,6 @@ Rails.application.routes.draw do
     delete "signout", to: "users/sessions#destroy", as: "destroy_user_session"
 
     get "signup", to: "users/registrations#new", as: "new_user_registration"
-    post "signup", to: "users/registrations#create", as: "user_registration"
+    # post "signup", to: "users/registrations#create", as: "user_registration"
   end
 end
