@@ -54,6 +54,7 @@ class Booking < ApplicationRecord
   validate :valid_date_range
   validate :valid_time_range
   validate :no_overlap_bookings
+  validate :udi_itb_special_validations
 
   before_save :generate_key
   before_save :convert_times_to_utc
@@ -96,8 +97,22 @@ class Booking < ApplicationRecord
     if parsed_date.nil?
       errors.add(:date, "is not a valid date format (must be mm/dd/yyyy)")
     else
-      unless parsed_date.to_date.between?(Date.tomorrow, 2.months.from_now)
-        errors.add(:date, "must be from tommorow up to 2 months ahead")
+      # Special validation for UDI x ITB bookings
+      if special_booking?
+        # Only allow October 2025
+        unless parsed_date.year == 2025 && parsed_date.month == 10
+          errors.add(:date, "must be in October 2025 for UDI x ITB bookings")
+        end
+        
+        # For UDI x ITB bookings, only allow dates within the current Sunday week
+        unless date_within_current_sunday_week?(parsed_date)
+          errors.add(:date, "must be within the current Sunday week for UDI x ITB bookings")
+        end
+      else
+        # Normal validation for regular bookings
+        unless parsed_date.to_date.between?(Date.tomorrow, 2.months.from_now)
+          errors.add(:date, "must be from tommorow up to 2 months ahead")
+        end
       end
     end
   end
@@ -105,11 +120,22 @@ class Booking < ApplicationRecord
   def valid_time_range
     if start_time && end_time
       duration = (end_time - start_time) / 60
-      if duration < 15
-        errors.add(:end_time, "must be at least 15 minutes")
-      elsif duration > 120 && !from_google_calendar?
-        # Skip 2-hour limit for Google Calendar synced events
-        errors.add(:end_time, "cannot be more than 2 hours")
+      
+      # Special validation for UDI x ITB bookings
+      if special_booking?
+        if duration < 20
+          errors.add(:end_time, "must be at least 20 minutes for UDI x ITB bookings")
+        elsif duration > 30
+          errors.add(:end_time, "cannot be more than 30 minutes for UDI x ITB bookings")
+        end
+      else
+        # Normal validation for regular bookings
+        if duration < 15
+          errors.add(:end_time, "must be at least 15 minutes")
+        elsif duration > 120 && !from_google_calendar?
+          # Skip 2-hour limit for Google Calendar synced events
+          errors.add(:end_time, "cannot be more than 2 hours")
+        end
       end
     else
       errors.add(:start_time, "and end_time are required")
@@ -140,6 +166,37 @@ class Booking < ApplicationRecord
     if subject.include?("[UDIxITB]")
       self.is_approved = true
     end
+  end
+
+  def udi_itb_special_validations
+    return unless special_booking?
+    return unless date.present?
+    return if from_google_calendar? # Skip for Google Calendar events
+    
+    parsed_date = Date.strptime(date, "%m/%d/%Y") rescue nil
+    return unless parsed_date
+    
+    # Validate day of week (only Thursday and Friday allowed)
+    day_of_week = parsed_date.wday
+    unless [4, 5].include?(day_of_week) # 4 = Thursday, 5 = Friday
+      errors.add(:date, "must be on Thursday or Friday for UDI x ITB bookings")
+    end
+  end
+
+  # Helper method to check if date is within current Sunday week
+  def date_within_current_sunday_week?(date)
+    # Get current date in user's timezone
+    user_timezone = ActiveSupport::TimeZone[timezone_offset] || Time.zone
+    current_date = Time.current.in_time_zone(user_timezone).to_date
+    
+    # Find the current Sunday (start of week)
+    current_sunday = current_date.beginning_of_week(:sunday)
+    
+    # Find the next Sunday (end of current week)
+    next_sunday = current_sunday + 1.week
+    
+    # Check if the given date is within current Sunday week
+    date.between?(current_sunday, next_sunday - 1.day)
   end
 
   def should_sync_with_google?

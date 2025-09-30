@@ -50,14 +50,13 @@ module Schedules
           end
         end
         
-        # Add organizer
-        e.organizer = "mailto:me@sandyrw.com"
-        e.organizer.icalendar_params["CN"] = "Sandy R Wicaksono"
+        # Add organizer using Icalendar::Values::CalAddress
+        organizer = Icalendar::Values::CalAddress.new("mailto:me@sandyrw.com", cn: "Sandy R Wicaksono")
+        e.organizer = organizer
         
-        # Add attendee
-        e.attendee = "mailto:#{appointment.email}"
-        e.attendee.icalendar_params["CN"] = appointment.name
-        e.attendee.icalendar_params["ROLE"] = "REQ-PARTICIPANT"
+        # Add attendee using Icalendar::Values::CalAddress
+        attendee = Icalendar::Values::CalAddress.new("mailto:#{appointment.email}", cn: appointment.name, role: "REQ-PARTICIPANT")
+        e.attendee = attendee
         
         # Add categories
         if appointment.special_booking?

@@ -2,7 +2,7 @@ module Schedules
   class AppointmentsController < ApplicationController
     allow_unauthenticated_access
     before_action :find_appointment_by_slug, only: %i[show download_ics cancel]
-    before_action :verify_secret_key, only: %i[cancel]
+    before_action :verify_secret_key, only: %i[cancel download_ics]
 
     def show
       presenter = AppointmentPresenter.new(@appointment)
@@ -11,14 +11,10 @@ module Schedules
     end
 
     def download_ics
-      if params[:secret_key] != @appointment.secret_key
-        render plain: "Invalid secret key", status: :unauthorized
-      else
-        ics_data = IcsGeneratorService.generate(@appointment)
-        send_data ics_data,
-          filename: "meeting_with_#{@appointment.name.split(" ").first.downcase}_#{@appointment.start_time.strftime("%Y-%m-%d")}.ics",
-          type: "text/calendar"
-      end
+      ics_data = IcsGeneratorService.generate(@appointment)
+      send_data ics_data,
+        filename: "meeting_with_#{@appointment.name.split(" ").first.downcase}_#{@appointment.start_time.strftime("%Y-%m-%d")}.ics",
+        type: "text/calendar"
     end
 
     def cancel
@@ -64,13 +60,14 @@ module Schedules
 
     def find_appointment_by_slug
       @appointment = Booking.find_by(slug: params[:slug])
-      render_not_found unless @appointment
+      unless @appointment
+        render plain: "Appointment not found", status: :not_found
+      end
     end
 
     def verify_secret_key
       unless params[:secret_key] == @appointment.secret_key
-        flash[:alert] = "Invalid secret key."
-        redirect_to appointment_path(@appointment.slug)
+        render plain: "Invalid secret key", status: :unauthorized
       end
     end
   end

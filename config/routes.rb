@@ -18,7 +18,7 @@ Rails.application.routes.draw do
     resources :appointments, param: :slug, only: %i[show update] do
       member do
         get :download_ics
-        delete :cancel
+        get :cancel
       end
     end
   end

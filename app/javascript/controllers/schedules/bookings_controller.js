@@ -1,5 +1,7 @@
 import { Controller } from "@hotwired/stimulus";
 
+console.log("Bookings controller file loaded"); // Debug log
+
 // Connects to data-controller="schedules--bookings"
 export default class extends Controller {
   static targets = [
@@ -17,9 +19,14 @@ export default class extends Controller {
     "errorDate",
     "startTime",
     "endTime",
-    "errorTime"
+    "errorTime",
+    "subject",
+    "errorDetails"
   ];
   async connect() {
+    console.log('Bookings controller connected'); // Debug log
+    console.log('Available targets:', Object.keys(this).filter(key => key.endsWith('Target'))); // Debug log
+    
     this.today = new Date();
     this.currentDate = new Date();
     this.currentMonth = this.today.getMonth();
@@ -58,6 +65,8 @@ export default class extends Controller {
     await this.loadEvents();
     this.displayEvents(this.todayLocalDate);
     this.userTimezoneTarget.textContent = `${this.userTimezone}`;
+    
+    console.log('Bookings controller fully initialized'); // Debug log
   }
 
   // TODO: multi timezone fetching data
@@ -301,11 +310,11 @@ export default class extends Controller {
         } else if (status === 409) {
           this.conflictModalTarget.classList.remove("hidden");
         } else {
-          this.failedModalTarget.classList.remove("hidden");
+          this.showErrorModal(data);
         }
       })
       .catch((error) => {
-        this.failedModalTarget.classList.remove("hidden");
+        this.showErrorModal({ errors: ["Network error occurred. Please try again."] });
       });
   }
 
@@ -314,17 +323,51 @@ export default class extends Controller {
     let dateInput = new Date(this.dateInputTarget.value);
     let startTime = this.startTimeTarget.value;
     let endTime = this.endTimeTarget.value;
+    let subject = this.subjectTarget.value;
 
     if (!dateInput || !startTime || !endTime) {
       isValid = false;
     }
 
-    if (dateInput < new Date(this.formattedTomorrowDate)) {
-      this.errorDateTarget.textContent = `Date must be in the future.`;
-      isValid = false;
-    } else if (dateInput > new Date(this.formattedMaxDate)) {
-      this.errorDateTarget.textContent = `Date must be before ${this.formattedMaxDate}.`;
-      isValid = false;
+    // Check if this is a UDI x ITB booking
+    const isUDIxITBBooking = subject.includes("[UDIxITB]");
+
+    // Date validation
+    if (isUDIxITBBooking) {
+      // Only allow October 2025
+      if (dateInput.getFullYear() !== 2025 || dateInput.getMonth() !== 9) { // Month is 0-indexed, October = 9
+        this.errorDateTarget.textContent = `Date must be in October 2025 for UDI x ITB bookings.`;
+        isValid = false;
+      }
+      
+      // For UDI x ITB bookings: only allow dates within current Sunday week
+      const currentSundayWeek = this.getCurrentSundayWeekRange();
+      if (dateInput < currentSundayWeek.start || dateInput > currentSundayWeek.end) {
+        this.errorDateTarget.textContent = `Date must be within the current Sunday week for UDI x ITB bookings.`;
+        isValid = false;
+      }
+      
+      // Only allow Thursday (4) and Friday (5)
+      const dayOfWeek = dateInput.getDay();
+      if (![4, 5].includes(dayOfWeek)) {
+        this.errorDateTarget.textContent = `Date must be on Thursday or Friday for UDI x ITB bookings.`;
+        isValid = false;
+      }
+      
+      if (isValid) {
+        this.errorDateTarget.textContent = "";
+      }
+    } else {
+      // Normal validation for regular bookings
+      if (dateInput < new Date(this.formattedTomorrowDate)) {
+        this.errorDateTarget.textContent = `Date must be in the future.`;
+        isValid = false;
+      } else if (dateInput > new Date(this.formattedMaxDate)) {
+        this.errorDateTarget.textContent = `Date must be before ${this.formattedMaxDate}.`;
+        isValid = false;
+      } else {
+        this.errorDateTarget.textContent = "";
+      }
     }
 
     let start = new Date(`1970-01-01T${startTime}`);
@@ -332,17 +375,32 @@ export default class extends Controller {
 
     let duration = (end - start) / 60000;
 
+    // Duration validation
     if (duration <= 0) {
       this.errorTimeTarget.textContent = `End time must be after start time.`;
       isValid = false;
-    } else if (duration < 15) {
-      this.errorTimeTarget.textContent = `Duration must be at least 15 minutes.`;
-      isValid = false;
-    } else if (duration > 120) {
-      this.errorTimeTarget.textContent = `Duration must be at most 120 minutes.`;
-      isValid = false;
+    } else if (isUDIxITBBooking) {
+      // Special validation for UDI x ITB bookings (20-30 minutes)
+      if (duration < 20) {
+        this.errorTimeTarget.textContent = `Duration must be at least 20 minutes for UDI x ITB bookings.`;
+        isValid = false;
+      } else if (duration > 30) {
+        this.errorTimeTarget.textContent = `Duration must be at most 30 minutes for UDI x ITB bookings.`;
+        isValid = false;
+      } else {
+        this.errorTimeTarget.textContent = "";
+      }
     } else {
-      this.errorTimeTarget.textContent = "";
+      // Normal validation for regular bookings (15-120 minutes)
+      if (duration < 15) {
+        this.errorTimeTarget.textContent = `Duration must be at least 15 minutes.`;
+        isValid = false;
+      } else if (duration > 120) {
+        this.errorTimeTarget.textContent = `Duration must be at most 120 minutes.`;
+        isValid = false;
+      } else {
+        this.errorTimeTarget.textContent = "";
+      }
     }
 
     this.fieldTargets.forEach((field, index) => {
@@ -415,5 +473,104 @@ export default class extends Controller {
 
   hideFailedModal() {
     this.failedModalTarget.classList.add("hidden");
+  }
+
+  // Show error modal with specific error messages
+  showErrorModal(data) {
+    console.log('Error data received:', data);
+    
+    if (!this.errorDetailsTarget) {
+      console.error('Error details target not found');
+      return;
+    }
+    
+    // Convert error messages to specific user-friendly text
+    let friendlyErrors = [];
+    
+    if (data.errors && data.errors.length > 0) {
+      data.errors.forEach(error => {
+        // UDI x ITB specific errors
+        if (error.includes("October 2025 for UDI x ITB")) {
+          friendlyErrors.push("❌ UDI x ITB bookings are only available in October 2025");
+        } else if (error.includes("current Sunday week for UDI x ITB")) {
+          friendlyErrors.push("❌ You cannot schedule UDI x ITB meetings outside of the current week");
+        } else if (error.includes("Thursday or Friday for UDI x ITB")) {
+          friendlyErrors.push("❌ UDI x ITB meetings can only be scheduled on Thursday or Friday");
+        } else if (error.includes("20 minutes for UDI x ITB")) {
+          friendlyErrors.push("❌ Meeting duration must be between 20-30 minutes for UDI x ITB bookings");
+        } else if (error.includes("30 minutes for UDI x ITB")) {
+          friendlyErrors.push("❌ Meeting duration must be between 20-30 minutes for UDI x ITB bookings");
+        }
+        // Regular booking errors
+        else if (error.includes("from tommorow up to 2 months ahead")) {
+          friendlyErrors.push("❌ Appointments can only be scheduled from tomorrow up to 2 months ahead");
+        } else if (error.includes("in the past")) {
+          friendlyErrors.push("❌ You cannot schedule appointments in the past");
+        } else if (error.includes("at least 15 minutes")) {
+          friendlyErrors.push("❌ Regular appointments must be at least 15 minutes long");
+        } else if (error.includes("no more than 2 hours") || error.includes("cannot be more than 2 hours")) {
+          friendlyErrors.push("❌ Regular appointments cannot be longer than 2 hours");
+        } else if (error.includes("after start time")) {
+          friendlyErrors.push("❌ End time must be after start time");
+        } else if (error.includes("valid email") || error.includes("Email is invalid")) {
+          friendlyErrors.push("❌ Please enter a valid email address");
+        } else if (error.includes("Name is too short") || error.includes("Name must be at least 3 characters")) {
+          friendlyErrors.push("❌ Name must be at least 3 characters long");
+        } else if (error.includes("Subject is too short") || error.includes("Subject must be at least 3 characters")) {
+          friendlyErrors.push("❌ Subject must be at least 3 characters long");
+        } else if (error.includes("Description must be at least 20 characters")) {
+          friendlyErrors.push("❌ Description must be at least 20 characters long");
+        } else if (error.includes("can't be blank")) {
+          friendlyErrors.push("❌ All fields are required");
+        } else if (error.includes("overlaps with") || error.includes("Booking overlaps")) {
+          friendlyErrors.push("❌ This time slot conflicts with another appointment");
+        } else {
+          // Fallback: show original error with ❌
+          friendlyErrors.push("❌ " + error);
+        }
+      });
+    } else {
+      friendlyErrors.push("❌ Something went wrong. Please check your input and try again.");
+    }
+    
+    // Simple HTML - just list the errors
+    let errorHtml = `
+      <p class="text-sm font-medium text-gray-800 mb-3">Your booking failed for the following reasons:</p>
+    `;
+    
+    friendlyErrors.forEach(error => {
+      errorHtml += `
+        <div class="mb-2 p-2 bg-red-50 rounded border-l-4 border-red-400">
+          <p class="text-sm text-red-700">${error}</p>
+        </div>
+      `;
+    });
+    
+    // Set the HTML and show modal
+    this.errorDetailsTarget.innerHTML = errorHtml;
+    this.failedModalTarget.classList.remove('hidden');
+    
+    console.log('Error modal shown with:', friendlyErrors);
+  }
+
+  // Helper method to get current Sunday week range
+  getCurrentSundayWeekRange() {
+    const today = new Date();
+    
+    // Get current Sunday (start of week)
+    const currentSunday = new Date(today);
+    const daysSinceLastSunday = today.getDay(); // 0 = Sunday, 1 = Monday, etc.
+    currentSunday.setDate(today.getDate() - daysSinceLastSunday);
+    currentSunday.setHours(0, 0, 0, 0);
+    
+    // Get next Sunday (end of current week)
+    const nextSunday = new Date(currentSunday);
+    nextSunday.setDate(currentSunday.getDate() + 6); // Saturday is the last day of the week
+    nextSunday.setHours(23, 59, 59, 999);
+    
+    return {
+      start: currentSunday,
+      end: nextSunday
+    };
   }
 }
