@@ -161,22 +161,33 @@ export default class extends Controller {
           approvedEvents.length > 0
             ? `
           <div class="approved-events border border-green-500 rounded-lg p-4 mb-4 bg-white dark:bg-gray-800">
-            <h3 class="font-bold text-green-600 dark:text-green-400 mb-2">Approved Events</h3>
+            <h3 class="font-bold text-green-600 dark:text-green-400 mb-2">📅 Scheduled Sessions</h3>
+            ${this.generateBufferInfo(approvedEvents)}
             <div class="space-y-3">
               ${approvedEvents
                 .map(
-                  (event) => `
-                <div class="p-3 bg-green-50 dark:bg-green-900 rounded-lg shadow">
+                  (event) => {
+                    const isUDI = event.subject.includes('[UDIxITB]');
+                    const startTime = new Date(event.start_time);
+                    const endTime = new Date(event.end_time);
+                    const bufferMinutes = isUDI ? this.calculateBufferForEvent(approvedEvents, startTime) : 0;
+                    const effectiveEndTime = new Date(endTime.getTime() + bufferMinutes * 60000);
+                    
+                    return `
+                <div class="p-3 ${isUDI ? 'bg-purple-50 border border-purple-200' : 'bg-green-50'} dark:bg-green-900 rounded-lg shadow">
                   <span class="block font-semibold text-gray-800 dark:text-gray-200">${
                     event.subject
-                  }</span>
-                  <span class="block text-xs text-gray-500 dark:text-gray-400">${new Date(
-                    event.start_time
-                  ).toLocaleTimeString()} - ${new Date(
-                    event.end_time
-                  ).toLocaleTimeString()}</span>
+                  }
+                    ${isUDI ? '<span class="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded ml-2">UDI x ITB</span>' : ''}
+                  </span>
+                  <span class="block text-xs text-gray-500 dark:text-gray-400">
+                    Session: ${startTime.toLocaleTimeString()} - ${endTime.toLocaleTimeString()}
+                    ${isUDI ? `<br>Buffer: +${bufferMinutes} min (until ${effectiveEndTime.toLocaleTimeString()})` : ''}
+                  </span>
+                  ${isUDI ? `<span class="block text-xs text-green-600 mt-1">✅ Next available: ${effectiveEndTime.toLocaleTimeString()}</span>` : ''}
                 </div>
-              `
+              `;
+                  }
                 )
                 .join("")}
             </div>
@@ -189,7 +200,7 @@ export default class extends Controller {
           nonApprovedEvents.length > 0
             ? `
           <div class="pending-events border border-yellow-500 rounded-lg p-4 bg-white dark:bg-gray-800">
-            <h3 class="font-bold text-yellow-600 dark:text-yellow-400 mb-2">Pending/Not Approved Events</h3>
+            <h3 class="font-bold text-yellow-600 dark:text-yellow-400 mb-2">⏳ Pending Approval</h3>
             <div class="space-y-3">
               ${nonApprovedEvents
                 .map(
@@ -329,34 +340,49 @@ export default class extends Controller {
       isValid = false;
     }
 
-    // Check if this is a UDI x ITB booking
+    // Block manual UDI x ITB booking - they must use special booking page
+    if (subject.includes("[UDIxITB]") || subject.toLowerCase().includes("udi") || subject.toLowerCase().includes("itb")) {
+      // Clear previous error messages
+      this.errorDateTarget.textContent = "";
+      this.errorTimeTarget.textContent = "";
+      
+      // Set specific error for UDI blocking
+      const subjectErrorElement = this.fieldTargets.find(field => field.name === "booking[subject]")?.nextElementSibling;
+      if (subjectErrorElement && subjectErrorElement.classList.contains('error-message')) {
+        subjectErrorElement.textContent = "⚠️ UDI x ITB bookings must use the special booking link. Please contact admin for access.";
+      }
+      
+      // Also show general error
+      if (this.errorDetailsTarget) {
+        this.errorDetailsTarget.innerHTML = `
+          <div class="mb-3 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <div class="flex items-center mb-2">
+              <span class="text-blue-500 mr-2">ℹ️</span>
+              <h4 class="font-medium text-blue-800">UDI x ITB Special Booking Required</h4>
+            </div>
+            <p class="text-sm text-blue-700 mb-3">
+              UDI x ITB coaching sessions require special scheduling through a dedicated booking page.
+            </p>
+            <div class="text-xs text-blue-600">
+              <p>• Contact admin for the special booking link</p>
+              <p>• Use pre-configured time slots</p>
+              <p>• Automatic session approval</p>
+            </div>
+          </div>
+        `;
+      }
+      
+      return false;
+    }
+
+    // Check if this is a UDI x ITB booking (this shouldn't happen anymore due to above check)
     const isUDIxITBBooking = subject.includes("[UDIxITB]");
 
     // Date validation
     if (isUDIxITBBooking) {
-      // Only allow October 2025
-      if (dateInput.getFullYear() !== 2025 || dateInput.getMonth() !== 9) { // Month is 0-indexed, October = 9
-        this.errorDateTarget.textContent = `Date must be in October 2025 for UDI x ITB bookings.`;
-        isValid = false;
-      }
-      
-      // For UDI x ITB bookings: only allow dates within current Sunday week
-      const currentSundayWeek = this.getCurrentSundayWeekRange();
-      if (dateInput < currentSundayWeek.start || dateInput > currentSundayWeek.end) {
-        this.errorDateTarget.textContent = `Date must be within the current Sunday week for UDI x ITB bookings.`;
-        isValid = false;
-      }
-      
-      // Only allow Thursday (4) and Friday (5)
-      const dayOfWeek = dateInput.getDay();
-      if (![4, 5].includes(dayOfWeek)) {
-        this.errorDateTarget.textContent = `Date must be on Thursday or Friday for UDI x ITB bookings.`;
-        isValid = false;
-      }
-      
-      if (isValid) {
-        this.errorDateTarget.textContent = "";
-      }
+      // This block should not be reached anymore, but keeping for safety
+      this.errorDateTarget.textContent = "UDI x ITB bookings must be made through the special booking page.";
+      isValid = false;
     } else {
       // Normal validation for regular bookings
       if (dateInput < new Date(this.formattedTomorrowDate)) {
@@ -375,32 +401,18 @@ export default class extends Controller {
 
     let duration = (end - start) / 60000;
 
-    // Duration validation
+    // Duration validation - only for regular bookings since UDI is blocked above
     if (duration <= 0) {
       this.errorTimeTarget.textContent = `End time must be after start time.`;
       isValid = false;
-    } else if (isUDIxITBBooking) {
-      // Special validation for UDI x ITB bookings (20-30 minutes)
-      if (duration < 20) {
-        this.errorTimeTarget.textContent = `Duration must be at least 20 minutes for UDI x ITB bookings.`;
-        isValid = false;
-      } else if (duration > 30) {
-        this.errorTimeTarget.textContent = `Duration must be at most 30 minutes for UDI x ITB bookings.`;
-        isValid = false;
-      } else {
-        this.errorTimeTarget.textContent = "";
-      }
+    } else if (duration < 15) {
+      this.errorTimeTarget.textContent = `Duration must be at least 15 minutes.`;
+      isValid = false;
+    } else if (duration > 120) {
+      this.errorTimeTarget.textContent = `Duration must be at most 120 minutes.`;
+      isValid = false;
     } else {
-      // Normal validation for regular bookings (15-120 minutes)
-      if (duration < 15) {
-        this.errorTimeTarget.textContent = `Duration must be at least 15 minutes.`;
-        isValid = false;
-      } else if (duration > 120) {
-        this.errorTimeTarget.textContent = `Duration must be at most 120 minutes.`;
-        isValid = false;
-      } else {
-        this.errorTimeTarget.textContent = "";
-      }
+      this.errorTimeTarget.textContent = "";
     }
 
     this.fieldTargets.forEach((field, index) => {
@@ -486,11 +498,26 @@ export default class extends Controller {
     
     // Convert error messages to specific user-friendly text
     let friendlyErrors = [];
+    let suggestedTimes = [];
     
     if (data.errors && data.errors.length > 0) {
       data.errors.forEach(error => {
+        // Enhanced UDI x ITB buffer conflict handling
+        if (error.includes("includes") && error.includes("minute buffer")) {
+          // Extract the next available time from error message
+          const timeMatch = error.match(/Next available time: (\d{2}:\d{2})/);
+          const nextTime = timeMatch ? timeMatch[1] : null;
+          
+          friendlyErrors.push("⏰ UDI x ITB session buffer conflict detected");
+          
+          if (nextTime) {
+            suggestedTimes.push(`✅ ${nextTime}-${this.addMinutes(nextTime, 30)} (Recommended)`);
+            suggestedTimes.push(`✅ ${this.addMinutes(nextTime, 35)}-${this.addMinutes(nextTime, 65)}`);
+            suggestedTimes.push(`✅ ${this.addMinutes(nextTime, 70)}-${this.addMinutes(nextTime, 100)}`);
+          }
+        }
         // UDI x ITB specific errors
-        if (error.includes("October 2025 for UDI x ITB")) {
+        else if (error.includes("October 2025 for UDI x ITB")) {
           friendlyErrors.push("❌ UDI x ITB bookings are only available in October 2025");
         } else if (error.includes("current Sunday week for UDI x ITB")) {
           friendlyErrors.push("❌ You cannot schedule UDI x ITB meetings outside of the current week");
@@ -533,18 +560,38 @@ export default class extends Controller {
       friendlyErrors.push("❌ Something went wrong. Please check your input and try again.");
     }
     
-    // Simple HTML - just list the errors
+    // Generate enhanced error HTML with suggestions
     let errorHtml = `
       <p class="text-sm font-medium text-gray-800 mb-3">Your booking failed for the following reasons:</p>
     `;
     
     friendlyErrors.forEach(error => {
+      if (error.includes("buffer conflict")) {
+        errorHtml += `
+          <div class="mb-3 p-3 bg-purple-50 rounded border-l-4 border-purple-400">
+            <p class="text-sm font-medium text-purple-800 mb-2">UDI x ITB Smart Scheduling</p>
+            <p class="text-sm text-purple-700">${error}</p>
+          </div>
+        `;
+      } else {
+        errorHtml += `
+          <div class="mb-2 p-2 bg-red-50 rounded border-l-4 border-red-400">
+            <p class="text-sm text-red-700">${error}</p>
+          </div>
+        `;
+      }
+    });
+    
+    if (suggestedTimes.length > 0) {
       errorHtml += `
-        <div class="mb-2 p-2 bg-red-50 rounded border-l-4 border-red-400">
-          <p class="text-sm text-red-700">${error}</p>
+        <div class="mb-3 p-3 bg-blue-50 rounded border-l-4 border-blue-400">
+          <p class="text-sm font-bold text-blue-800 mb-2">💡 Available Time Slots:</p>
+          <ul class="text-sm text-blue-700 space-y-1">
+            ${suggestedTimes.map(time => `<li>${time}</li>`).join('')}
+          </ul>
         </div>
       `;
-    });
+    }
     
     // Set the HTML and show modal
     this.errorDetailsTarget.innerHTML = errorHtml;
@@ -572,5 +619,53 @@ export default class extends Controller {
       start: currentSunday,
       end: nextSunday
     };
+  }
+
+  // Calculate buffer time for UDI x ITB events based on session count
+  calculateBufferForEvent(allEvents, eventStartTime) {
+    // Count UDI x ITB events on the same day
+    const sameDay = allEvents.filter(e => {
+      const eDate = new Date(e.start_time).toDateString();
+      const targetDate = eventStartTime.toDateString();
+      return eDate === targetDate && e.subject.includes('[UDIxITB]');
+    }).length;
+    
+    // Return adaptive buffer based on session count
+    if (sameDay <= 3) return 5;
+    if (sameDay <= 6) return 4;
+    if (sameDay <= 8) return 3;
+    if (sameDay <= 10) return 2;
+    return 1;
+  }
+
+  // Generate buffer info display for approved events
+  generateBufferInfo(approvedEvents) {
+    const udiEvents = approvedEvents.filter(e => e.subject.includes('[UDIxITB]'));
+    if (udiEvents.length === 0) return '';
+    
+    const bufferTime = this.calculateBufferForEvent(approvedEvents, new Date(udiEvents[0].start_time));
+    
+    return `
+      <div class="bg-purple-50 border border-purple-200 rounded-lg p-3 mb-4">
+        <div class="flex items-center">
+          <span class="text-purple-800 mr-2">⏰</span>
+          <span class="text-sm text-purple-800">
+            UDI x ITB sessions today: ${udiEvents.length} | Buffer time: ${bufferTime} minutes
+          </span>
+        </div>
+        <div class="text-xs text-purple-600 mt-1">
+          Buffer automatically adjusts based on daily session density for optimal scheduling
+        </div>
+      </div>
+    `;
+  }
+
+  // Helper method to add minutes to time string
+  addMinutes(timeStr, minutes) {
+    const [hours, mins] = timeStr.split(':').map(Number);
+    const totalMinutes = hours * 60 + mins + minutes;
+    const newHours = Math.floor(totalMinutes / 60);
+    const newMins = totalMinutes % 60;
+    return `${newHours.toString().padStart(2, '0')}:${newMins.toString().padStart(2, '0')}`;
   }
 }

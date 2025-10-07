@@ -1,0 +1,70 @@
+.container.mx-auto.px-4.py-8
+  .bg-white.rounded-lg.shadow-lg.p-6
+    h1.text-2xl.font-bold.text-gray-900.mb-4
+      | 🎯 UDI x ITB Time Slots Management
+    
+    p.text-gray-600.mb-6
+      | Check/uncheck time slots to enable/disable them for booking
+    
+    - if @available_dates.empty?
+      .text-center.py-12
+        .text-4xl.mb-4 📅
+        p.text-xl.text-gray-600 No UDI dates this week
+        p.text-gray-500 Thursday or Friday dates will appear here
+        
+    - else
+      p.text-green-600.mb-4 Found #{@available_dates.count} UDI dates this week
+      
+      = form_with url: update_slots_manages_udi_settings_path, method: :patch, local: true, data: { controller: "udi-settings" } do |form|
+        
+        - @available_dates.each do |date|
+          - date_key = date.strftime('%Y-%m-%d')
+          - disabled_for_date = @disabled_slots[date_key] || []
+          
+          .border.border-gray-200.rounded-lg.p-4.mb-6
+            .flex.items-center.justify-between.mb-3
+              h3.text-lg.font-semibold.text-gray-800
+                = date.strftime('%A, %B %d, %Y')
+              .space-x-2
+                button.text-sm.px-3.py-1.bg-green-100.text-green-700.rounded.hover:bg-green-200 type="button" data-action="click->udi-settings#enableAllForDate" data-date=date_key
+                  | ✅ Enable All
+                button.text-sm.px-3.py-1.bg-red-100.text-red-700.rounded.hover:bg-red-200 type="button" data-action="click->udi-settings#disableAllForDate" data-date=date_key
+                  | 🚫 Disable All
+            
+            p.text-sm.text-gray-600.mb-3 Date: #{date_key} | Disabled: #{disabled_for_date.count} slots
+            
+            .grid.grid-cols-2.md:grid-cols-3.lg:grid-cols-4.gap-3
+              - if @all_slots_by_day && @all_slots_by_day[date]
+                - @all_slots_by_day[date].each do |slot|
+                  - is_disabled = disabled_for_date.include?(slot[:start])
+                  - booking_count = (@booking_counts && @booking_counts[date] && @booking_counts[date][slot[:start]]) ? @booking_counts[date][slot[:start]] : 0
+                  - is_booked = booking_count > 0
+                  
+                  - bg_class = is_booked ? 'bg-red-50 border-red-200' : (is_disabled ? 'bg-gray-100 border-gray-300' : 'bg-green-50 border-green-200')
+                  
+                  .flex.items-center.p-3.border.rounded class=bg_class
+                    = check_box_tag "enabled_slots[#{date_key}][]", slot[:start], !is_disabled, 
+                        class: "mr-3", 
+                        disabled: is_booked,
+                        id: "slot_#{date_key}_#{slot[:start].gsub(':', '_')}",
+                        data: { action: "change->udi-settings#checkboxChanged" }
+                    = label_tag "slot_#{date_key}_#{slot[:start].gsub(':', '_')}", class: "flex-1 cursor-pointer"
+                      .font-medium.text-sm = slot[:label]
+                      .text-xs
+                        - if is_booked
+                          span.text-red-600 ⛔ #{booking_count} booked
+                        - elsif is_disabled
+                          span.text-gray-500 🚫 Disabled
+                        - else
+                          span.text-green-600 ✅ Available
+              - else
+                p.text-gray-500 No slots found for this date
+        
+        .mt-6.flex.justify-between
+          = link_to "🔄 Reset All", reset_week_manages_udi_settings_path, method: :post, 
+              class: "px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600",
+              data: { confirm: "Are you sure you want to enable all slots for this week?", turbo_method: :post }
+          = form.submit "💾 Update Settings", class: "px-6 py-2 bg-purple-600 text-white rounded hover:bg-purple-700"
+    
+    .mt-6.text-center
+      = link_to "← Back to Dashboard", manage_appointments_path, class: "text-blue-600 hover:text-blue-800"

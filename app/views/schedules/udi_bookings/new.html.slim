@@ -1,0 +1,197 @@
+- content_for :content do
+  .min-h-screen.bg-gradient-to-br.from-purple-50.via-blue-50.to-indigo-100.py-8
+    .container.mx-auto.px-4.max-w-7xl
+      
+      // Header Section
+      .text-center.mb-8
+        .bg-white.rounded-3xl.shadow-2xl.p-8.backdrop-blur-sm.border.border-white/20
+          .flex.items-center.justify-center.mb-4
+            .w-16.h-16.bg-gradient-to-r.from-purple-500.to-blue-500.rounded-2xl.flex.items-center.justify-center
+              span.text-3xl 🎯
+          h1.text-4xl.md:text-5xl.font-bold.bg-gradient-to-r.from-purple-600.to-blue-600.bg-clip-text.text-transparent.mb-3
+            | UDI x ITB Hub
+          h2.text-xl.md:text-2xl.text-gray-700.font-medium.mb-4
+            | 1:1 Coaching Session
+          p.text-gray-600.max-w-2xl.mx-auto
+            | Schedule your personalized coaching session with Sandy R Wicaksono. Select your preferred time slot and provide your details below.
+
+      = form_with model: @booking, url: udi_booking_path, local: true, data: { controller: "udi_calendar" }, class: "space-y-8" do |form|
+        
+        .grid.lg:grid-cols-5.gap-8
+          
+          // Calendar Section - Google Calendar Style
+          .lg:col-span-3
+            .bg-white.rounded-2xl.shadow-xl.overflow-hidden.border.border-gray-200
+              
+              // Calendar Header
+              .bg-gradient-to-r.from-purple-500.to-blue-500.text-white.p-6
+                h3.text-xl.font-semibold.flex.items-center
+                  span.mr-3 📅
+                  | Select Your Session Time
+                p.text-purple-100.mt-2
+                  | Choose from available time slots this week
+              
+              // Calendar Body
+              .p-6
+                - if @available_dates.empty?
+                  .text-center.py-16
+                    .w-24.h-24.mx-auto.mb-6.bg-gray-100.rounded-full.flex.items-center.justify-center
+                      span.text-4xl.text-gray-400 📅
+                    h3.text-xl.font-medium.text-gray-600.mb-2 No Sessions Available
+                    p.text-gray-500 No booking slots available this week. Please check back next week.
+                    
+                - else
+                  .space-y-8
+                    - @available_dates.each do |date|
+                      .border.border-gray-200.rounded-xl.overflow-hidden
+                        
+                        // Date Header
+                        .bg-gray-50.px-6.py-4.border-b.border-gray-200
+                          .flex.items-center.justify-between
+                            .flex.items-center
+                              .w-3.h-3.rounded-full class=("#{date.wday == 4 ? 'bg-purple-500' : 'bg-blue-500'}") 
+                              .ml-3
+                                h4.text-lg.font-semibold.text-gray-800
+                                  = date.strftime('%A')
+                                p.text-sm.text-gray-600
+                                  = date.strftime('%B %d, %Y')
+                            
+                            - total_slots = @available_slots_by_date[date].values.sum { |session| session[:count] }
+                            .text-right
+                              .text-sm.font-medium.text-gray-700
+                                = "#{total_slots} slots available"
+                              .text-xs.text-gray-500 30 min sessions
+                        
+                        // Time Slots by Session
+                        .p-6
+                          - if @available_slots_by_date[date].empty?
+                            .text-center.py-8
+                              span.text-4xl.mb-2.block 😔
+                              p.text-gray-500 No slots available for this date
+                          - else
+                            .space-y-6
+                              - @available_slots_by_date[date].each do |session_name, session_data|
+                                .space-y-3
+                                  // Session Header
+                                  .flex.items-center.space-x-3
+                                    - case session_name
+                                    - when 'morning'
+                                      .w-4.h-4.bg-yellow-400.rounded-full
+                                      h5.font-medium.text-gray-800 🌅 Morning Session
+                                      .text-xs.text-gray-500 
+                                        - if date.wday == 4
+                                          | (08:00-12:00)
+                                        - else 
+                                          | (08:00-11:00)
+                                    - when 'afternoon' 
+                                      .w-4.h-4.bg-orange-400.rounded-full
+                                      h5.font-medium.text-gray-800 ☀️ Afternoon Session  
+                                      .text-xs.text-gray-500 (13:00-17:30)
+                                    - when 'evening'
+                                      .w-4.h-4.bg-indigo-400.rounded-full
+                                      h5.font-medium.text-gray-800 🌙 Evening Session
+                                      .text-xs.text-gray-500 (19:00-22:00)
+                                  
+                                  // Time Slots Grid
+                                  .grid.grid-cols-2.sm:grid-cols-3.md:grid-cols-4.gap-3
+                                    - session_data[:slots].each do |slot|
+                                      button.slot-btn type="button" data-date=date.strftime('%Y-%m-%d') data-slot=slot[:start] data-session=session_name data-action="click->udi_calendar#selectSlot" class="group relative p-4 border-2 border-gray-200 rounded-xl hover:border-purple-400 hover:shadow-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 bg-white hover:bg-gradient-to-br hover:from-purple-50 hover:to-blue-50"
+                                        .text-center
+                                          .font-semibold.text-gray-800.group-hover:text-purple-600.transition-colors
+                                            = slot[:label]
+                                          .text-xs.text-gray-500.mt-1 Available
+                                        
+                                        // Hover Effect
+                                        .absolute.inset-0.rounded-xl.ring-2.ring-purple-400.opacity-0.group-hover:opacity-100.transition-opacity.pointer-events-none
+
+          // Booking Form Section
+          .lg:col-span-2
+            .bg-white.rounded-2xl.shadow-xl.p-6.border.border-gray-200.h-fit
+              
+              // Form Header
+              .mb-6
+                h3.text-xl.font-semibold.text-gray-800.flex.items-center
+                  span.mr-3 📝
+                  | Your Information
+                p.text-gray-600.text-sm.mt-2
+                  | Fill in your details to complete the booking
+              
+              // Selected Time Summary
+              #time-summary.mb-6.p-4.bg-gradient-to-r.from-purple-50.to-blue-50.rounded-xl.border.border-purple-200.hidden data-udi_calendar-target="summary"
+                .flex.items-center.justify-between
+                  div
+                    .text-sm.font-medium.text-purple-800 Selected Time
+                    .text-lg.font-bold.text-purple-900 data-udi_calendar-target="summaryText"
+                  .w-8.h-8.bg-purple-500.rounded-full.flex.items-center.justify-center
+                    span.text-white.text-sm ✓
+              
+              // Form Fields
+              .space-y-5
+                // Name
+                div
+                  = form.label :name, "Full Name", class: "block text-sm font-medium text-gray-700 mb-2"
+                  = form.text_field :name, class: "w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all", placeholder: "Enter your full name", required: true
+                  - if @booking.errors[:name].any?
+                    p.text-red-500.text-xs.mt-1 = @booking.errors[:name].first
+                
+                // Email  
+                div
+                  = form.label :email, "Email Address", class: "block text-sm font-medium text-gray-700 mb-2"
+                  = form.email_field :email, class: "w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all", placeholder: "your.email@example.com", required: true
+                  - if @booking.errors[:email].any?
+                    p.text-red-500.text-xs.mt-1 = @booking.errors[:email].first
+                
+                // Subject
+                div
+                  = form.label :subject, "Session Topic", class: "block text-sm font-medium text-gray-700 mb-2"
+                  = form.text_field :subject, class: "w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all", placeholder: "e.g., Career Development, Project Discussion", required: true
+                  - if @booking.errors[:subject].any?
+                    p.text-red-500.text-xs.mt-1 = @booking.errors[:subject].first
+                
+                // Description
+                div
+                  = form.label :description, "What would you like to discuss?", class: "block text-sm font-medium text-gray-700 mb-2"
+                  = form.text_area :description, rows: 4, class: "w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all resize-none", placeholder: "Brief description of topics, questions, or goals for this session...", required: true
+                  - if @booking.errors[:description].any?
+                    p.text-red-500.text-xs.mt-1 = @booking.errors[:description].first
+                
+                // Timezone
+                div
+                  = form.label :timezone_offset, "Timezone", class: "block text-sm font-medium text-gray-700 mb-2"
+                  = form.select :timezone_offset, [["🇮🇩 Jakarta Time (GMT+7)", "Asia/Jakarta"]], {}, { class: "w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all" }
+        
+        // Hidden fields for selected slot
+        = hidden_field_tag :selected_date, nil, data: { "udi_calendar_target": "selectedDate" }
+        = hidden_field_tag :selected_slot, nil, data: { "udi_calendar_target": "selectedSlot" }
+        
+        // Submit Section
+        .bg-white.rounded-2xl.shadow-xl.p-6.border.border-gray-200
+          
+          // Error Messages
+          - if @booking.errors.any?
+            .mb-6.p-4.bg-red-50.border.border-red-200.rounded-xl
+              .flex.items-center.mb-2
+                span.text-red-500.mr-2 ⚠️
+                h4.font-medium.text-red-800 Please fix the following errors:
+              ul.text-sm.text-red-700.space-y-1
+                - @booking.errors.full_messages.each do |message|
+                  li.flex.items-center
+                    span.mr-2 •
+                    = message
+          
+          // Submit Button
+          .text-center
+            = form.submit "Book My Session", class: "w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-purple-600 to-blue-600 text-white font-semibold text-lg rounded-xl hover:from-purple-700 hover:to-blue-700 focus:ring-4 focus:ring-purple-200 transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-105", data: { "udi_calendar_target": "submitBtn" }, disabled: true
+            
+            .mt-4.text-xs.text-gray-500.space-y-1
+              p.flex.items-center.justify-center
+                span.mr-2 ✅
+                | Session will be auto-approved
+              p.flex.items-center.justify-center  
+                span.mr-2 📧
+                | Confirmation email will be sent
+              p.flex.items-center.justify-center
+                span.mr-2 🎥  
+                | Zoom link will be included
+
+= render "layouts/app_main"

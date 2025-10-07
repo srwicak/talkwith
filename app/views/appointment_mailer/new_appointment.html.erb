@@ -31,6 +31,16 @@
     </div>
 
     <% if @is_special_booking %>
+      <% buffer_time = @appointment.calculate_adaptive_buffer %>
+      <div style="background: #e8f4fd; padding: 15px; border-radius: 8px; margin: 15px 0; border-left: 4px solid #2196F3;">
+        <h3 style="margin-top: 0; color: #1976D2;">🎯 UDI x ITB Hub 1:1 Coaching</h3>
+        <p><strong>Session Time:</strong> <%= @start_time.strftime("%H:%M") %> - <%= @end_time.strftime("%H:%M") %> WIB</p>
+        <p><strong>Transition Buffer:</strong> <%= buffer_time %> minutes reserved after your session</p>
+        <p style="font-size: 12px; color: #666; margin-top: 10px;">
+          💡 Buffer time is automatically optimized based on daily session density. Please end on time to help the next participant.
+        </p>
+      </div>
+      
       <div style="background: #e8f5e8; padding: 15px; border-radius: 8px; margin: 15px 0; border: 2px solid #4CAF50;">
         <h3 style="margin-top: 0; color: #2E7D32;">🎥 Meeting Information</h3>
         <p><strong>Zoom Meeting:</strong></p>

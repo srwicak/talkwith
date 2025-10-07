@@ -23,6 +23,11 @@ Rails.application.routes.draw do
     end
   end
 
+  # UDI x ITB Special Booking Routes
+  get '/udi-booking', to: 'schedules/udi_bookings#new', as: 'udi_booking'
+  post '/udi-booking', to: 'schedules/udi_bookings#create'
+  get '/udi-booking/slots', to: 'schedules/udi_bookings#available_slots'
+
   scope "/" do
     # Google Calendar Management - unified route
     get "manage", to: "manages#index", as: "manage_appointments"
@@ -34,6 +39,16 @@ Rails.application.routes.draw do
       collection do
         post :sync_from_google
         post :sync_to_google
+      end
+    end
+
+    # UDI Settings Management
+    namespace :manages do
+      resources :udi_settings, only: [:index] do
+        collection do
+          patch :update_slots
+          post :reset_week
+        end
       end
     end
 
