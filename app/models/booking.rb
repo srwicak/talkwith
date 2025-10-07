@@ -254,32 +254,7 @@ class Booking < ApplicationRecord
 
   # Calculate adaptive buffer time for UDI x ITB bookings
   def calculate_adaptive_buffer
-    return 0 unless special_booking?
-    
-    # Count UDI x ITB sessions on the same day
-    booking_date = start_time&.to_date || (date.present? ? Date.strptime(date, "%m/%d/%Y") : Date.current)
-    same_day_sessions = Booking.where(
-      "DATE(start_time) = ? AND subject LIKE ? AND is_approved = ?",
-      booking_date,
-      "%[UDIxITB]%",
-      true
-    ).where.not(id: id || 0).count
-    
-    # Include current booking if it's approved or being approved
-    same_day_sessions += 1 if is_approved? || is_approved_changed?
-    
-    case same_day_sessions
-    when 1..3
-      5  # Full 5-minute buffer for light days
-    when 4..6
-      4  # 4-minute buffer for medium days  
-    when 7..8
-      3  # 3-minute buffer for busy days
-    when 9..10
-      2  # 2-minute minimal buffer for very busy days
-    else
-      1  # 1-minute minimal for extreme cases (11+ sessions)
-    end
+    return 0 # No buffer needed with structured time slots
   end
 
   # Get formatted duration
@@ -300,6 +275,22 @@ class Booking < ApplicationRecord
 
   private
 
+  def parse_date_attribute(date_str)
+    return nil unless date_str.present?
+    
+    # Try YYYY-MM-DD format first (new format)
+    begin
+      return Date.strptime(date_str, "%Y-%m-%d")
+    rescue ArgumentError
+      # Fall back to MM/DD/YYYY format (legacy format)
+      begin
+        return Date.strptime(date_str, "%m/%d/%Y")
+      rescue ArgumentError
+        return nil
+      end
+    end
+  end
+
   def set_default_timezone
     self.timezone_offset = "UTC"
   end
@@ -308,9 +299,9 @@ class Booking < ApplicationRecord
     return unless date.present? # Skip validation if date is not set (for existing records)
     return if from_google_calendar? # Skip date range validation for Google Calendar events
     
-    parsed_date = Date.strptime(date, "%m/%d/%Y") rescue nil
+    parsed_date = parse_date_attribute(date)
     if parsed_date.nil?
-      errors.add(:date, "is not a valid date format (must be mm/dd/yyyy)")
+      errors.add(:date, "is not a valid date format")
     else
       # Special validation for UDI x ITB bookings
       if special_booking?
@@ -358,32 +349,37 @@ class Booking < ApplicationRecord
   end
 
   def no_overlap_bookings
-    # Calculate effective times considering adaptive buffer for UDI x ITB bookings
-    buffer_minutes = calculate_adaptive_buffer
-    effective_end_time = special_booking? ? end_time + buffer_minutes.minutes : end_time
-    effective_start_time = start_time
+    # Skip overlap validation for UDI bookings since we use structured time slots
+    return if special_booking?
     
-    # Find overlapping bookings considering buffer times
+    # For non-UDI bookings, ensure we have proper datetime objects for comparison
+    return unless date.present? && start_time.present? && end_time.present?
+    
+    # Convert times to proper datetime objects if they're still strings
+    if start_time.is_a?(String) || end_time.is_a?(String)
+      timezone = ActiveSupport::TimeZone[timezone_offset]
+      parsed_date = parse_date_attribute(date)
+      return unless parsed_date
+      
+      date_for_parsing = parsed_date.strftime("%Y-%m-%d")
+      
+      temp_start_time = start_time.is_a?(String) ? timezone.parse("#{date_for_parsing} #{start_time}").utc : start_time
+      temp_end_time = end_time.is_a?(String) ? timezone.parse("#{date_for_parsing} #{end_time}").utc : end_time
+    else
+      temp_start_time = start_time
+      temp_end_time = end_time
+    end
+    
+    # Find overlapping bookings (simple overlap check for non-UDI bookings)
     overlapping_bookings = Booking.where.not(id: id || 0)
       .where(is_approved: true)
       .select do |booking|
-        other_buffer = booking.special_booking? ? booking.calculate_adaptive_buffer : 0
-        other_effective_end = booking.special_booking? ? booking.end_time + other_buffer.minutes : booking.end_time
-        other_effective_start = booking.start_time
-        
-        # Check if bookings overlap considering buffer time
-        effective_start_time < other_effective_end && effective_end_time > other_effective_start
+        # Simple overlap check: bookings overlap if one starts before the other ends
+        temp_start_time < booking.end_time && temp_end_time > booking.start_time
       end
     
     if overlapping_bookings.any?
-      conflicting_booking = overlapping_bookings.first
-      if conflicting_booking.special_booking?
-        conflict_buffer = conflicting_booking.calculate_adaptive_buffer
-        next_available = (conflicting_booking.end_time + conflict_buffer.minutes)
-        errors.add(:base, "Booking conflicts with UDI x ITB session (includes #{conflict_buffer}-minute buffer). Next available time: #{next_available.strftime('%H:%M')}")
-      else
-        errors.add(:base, "Booking overlaps with an approved schedule")
-      end
+      errors.add(:base, "Booking overlaps with an approved schedule")
     end
   end
 
@@ -396,8 +392,16 @@ class Booking < ApplicationRecord
     return unless date.present? && start_time.present? && end_time.present?
     
     timezone = ActiveSupport::TimeZone[timezone_offset]
-    self.start_time = timezone.parse("#{date} #{start_time}").utc
-    self.end_time = timezone.parse("#{date} #{end_time}").utc
+    
+    # Parse date with explicit format to avoid ambiguity
+    parsed_date = parse_date_attribute(date)
+    return unless parsed_date
+    
+    # Format as YYYY-MM-DD for consistent parsing
+    date_for_parsing = parsed_date.strftime("%Y-%m-%d")
+    
+    self.start_time = timezone.parse("#{date_for_parsing} #{start_time}").utc
+    self.end_time = timezone.parse("#{date_for_parsing} #{end_time}").utc
   end
 
   def auto_approve_special_bookings
@@ -411,7 +415,7 @@ class Booking < ApplicationRecord
     return unless date.present?
     return if from_google_calendar? # Skip for Google Calendar events
     
-    parsed_date = Date.strptime(date, "%m/%d/%Y") rescue nil
+    parsed_date = parse_date_attribute(date)
     return unless parsed_date
     
     # Validate day of week (only Thursday and Friday allowed)

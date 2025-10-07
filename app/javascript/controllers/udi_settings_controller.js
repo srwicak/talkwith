@@ -5,21 +5,21 @@ export default class extends Controller {
   static targets = ["checkbox"]
 
   connect() {
-    console.log("UDI Settings controller connected")
+    // console.log("UDI Settings controller connected")
   }
 
   enableAllForDate(event) {
     const date = event.target.dataset.date
-    console.log("Enabling all slots for date:", date)
+    // console.log("Enabling all slots for date:", date)
     
     // Find all checkboxes for this specific date
     const checkboxes = this.element.querySelectorAll(`input[name*="[${date}]"]`)
-    console.log("Found checkboxes:", checkboxes.length)
+    // console.log("Found checkboxes:", checkboxes.length)
     
     checkboxes.forEach(checkbox => {
       if (!checkbox.disabled) {  // Don't change already booked slots
         checkbox.checked = true
-        console.log("Enabled checkbox:", checkbox.value)
+        // console.log("Enabled checkbox:", checkbox.value)
       }
     })
     
@@ -28,16 +28,16 @@ export default class extends Controller {
 
   disableAllForDate(event) {
     const date = event.target.dataset.date
-    console.log("Disabling all slots for date:", date)
+    // console.log("Disabling all slots for date:", date)
     
     // Find all checkboxes for this specific date  
     const checkboxes = this.element.querySelectorAll(`input[name*="[${date}]"]`)
-    console.log("Found checkboxes:", checkboxes.length)
+    // console.log("Found checkboxes:", checkboxes.length)
     
     checkboxes.forEach(checkbox => {
       if (!checkbox.disabled) {  // Don't change already booked slots
         checkbox.checked = false
-        console.log("Disabled checkbox:", checkbox.value)
+        // console.log("Disabled checkbox:", checkbox.value)
       }
     })
     
@@ -50,7 +50,7 @@ export default class extends Controller {
     if (confirm("Are you sure you want to enable all slots for this week?")) {
       // Find all checkboxes in the form
       const checkboxes = this.element.querySelectorAll('input[type="checkbox"]')
-      console.log("Resetting all checkboxes:", checkboxes.length)
+      // console.log("Resetting all checkboxes:", checkboxes.length)
       
       checkboxes.forEach(checkbox => {
         if (!checkbox.disabled) {  // Don't change already booked slots
@@ -88,7 +88,7 @@ export default class extends Controller {
   }
 
   checkboxChanged(event) {
-    console.log("Checkbox changed:", event.target.value, "checked:", event.target.checked)
+    // console.log("Checkbox changed:", event.target.value, "checked:", event.target.checked)
     this.updateVisualState()
   }
 }

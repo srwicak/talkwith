@@ -1,6 +1,6 @@
 import { Controller } from "@hotwired/stimulus";
 
-console.log("Bookings controller file loaded"); // Debug log
+// console.log("Bookings controller file loaded"); // Debug log
 
 // Connects to data-controller="schedules--bookings"
 export default class extends Controller {
@@ -24,8 +24,8 @@ export default class extends Controller {
     "errorDetails"
   ];
   async connect() {
-    console.log('Bookings controller connected'); // Debug log
-    console.log('Available targets:', Object.keys(this).filter(key => key.endsWith('Target'))); // Debug log
+    // console.log('Bookings controller connected'); // Debug log
+    // console.log('Available targets:', Object.keys(this).filter(key => key.endsWith('Target'))); // Debug log
     
     this.today = new Date();
     this.currentDate = new Date();
@@ -66,7 +66,7 @@ export default class extends Controller {
     this.displayEvents(this.todayLocalDate);
     this.userTimezoneTarget.textContent = `${this.userTimezone}`;
     
-    console.log('Bookings controller fully initialized'); // Debug log
+    // console.log('Bookings controller fully initialized'); // Debug log
   }
 
   // TODO: multi timezone fetching data
@@ -315,7 +315,7 @@ export default class extends Controller {
       })
       .then(({ status, data }) => {
         if (status === 201) {
-          console.log(data);
+          // console.log(data);
           this.hideFormModal();
           this.successModalTarget.classList.remove("hidden");
         } else if (status === 409) {
@@ -489,10 +489,10 @@ export default class extends Controller {
 
   // Show error modal with specific error messages
   showErrorModal(data) {
-    console.log('Error data received:', data);
+    // console.log('Error data received:', data);
     
     if (!this.errorDetailsTarget) {
-      console.error('Error details target not found');
+      // console.error('Error details target not found');
       return;
     }
     
@@ -597,7 +597,7 @@ export default class extends Controller {
     this.errorDetailsTarget.innerHTML = errorHtml;
     this.failedModalTarget.classList.remove('hidden');
     
-    console.log('Error modal shown with:', friendlyErrors);
+    // console.log('Error modal shown with:', friendlyErrors);
   }
 
   // Helper method to get current Sunday week range
@@ -624,18 +624,18 @@ export default class extends Controller {
   // Calculate buffer time for UDI x ITB events based on session count
   calculateBufferForEvent(allEvents, eventStartTime) {
     // Count UDI x ITB events on the same day
-    const sameDay = allEvents.filter(e => {
-      const eDate = new Date(e.start_time).toDateString();
-      const targetDate = eventStartTime.toDateString();
-      return eDate === targetDate && e.subject.includes('[UDIxITB]');
-    }).length;
+    // const sameDay = allEvents.filter(e => {
+    //   const eDate = new Date(e.start_time).toDateString();
+    //   const targetDate = eventStartTime.toDateString();
+    //   return eDate === targetDate && e.subject.includes('[UDIxITB]');
+    // }).length;
     
-    // Return adaptive buffer based on session count
-    if (sameDay <= 3) return 5;
-    if (sameDay <= 6) return 4;
-    if (sameDay <= 8) return 3;
-    if (sameDay <= 10) return 2;
-    return 1;
+    // // Return adaptive buffer based on session count
+    // if (sameDay <= 3) return 5;
+    // if (sameDay <= 6) return 4;
+    // if (sameDay <= 8) return 3;
+    // if (sameDay <= 10) return 2;
+    return 5;
   }
 
   // Generate buffer info display for approved events
@@ -645,6 +645,20 @@ export default class extends Controller {
     
     const bufferTime = this.calculateBufferForEvent(approvedEvents, new Date(udiEvents[0].start_time));
     
+    // return `
+    //   <div class="bg-purple-50 border border-purple-200 rounded-lg p-3 mb-4">
+    //     <div class="flex items-center">
+    //       <span class="text-purple-800 mr-2">⏰</span>
+    //       <span class="text-sm text-purple-800">
+    //         UDI x ITB sessions today: ${udiEvents.length} | Buffer time: ${bufferTime} minutes
+    //       </span>
+    //     </div>
+    //     <div class="text-xs text-purple-600 mt-1">
+    //       Buffer automatically adjusts based on daily session density for optimal scheduling
+    //     </div>
+    //   </div>
+    // `;
+
     return `
       <div class="bg-purple-50 border border-purple-200 rounded-lg p-3 mb-4">
         <div class="flex items-center">
@@ -652,9 +666,6 @@ export default class extends Controller {
           <span class="text-sm text-purple-800">
             UDI x ITB sessions today: ${udiEvents.length} | Buffer time: ${bufferTime} minutes
           </span>
-        </div>
-        <div class="text-xs text-purple-600 mt-1">
-          Buffer automatically adjusts based on daily session density for optimal scheduling
         </div>
       </div>
     `;

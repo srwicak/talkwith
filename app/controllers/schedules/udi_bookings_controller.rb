@@ -28,10 +28,11 @@ module Schedules
       if validate_and_set_slot_time
         if @booking.save
           AppointmentMailer.new_appointment(@booking, appointment_url(@booking.slug)).deliver_later
-          redirect_to appointment_path(@booking.slug), notice: "🎯 UDI x ITB session booked successfully!"
+          redirect_to root_path, notice: "🎯 UDI x ITB session booked successfully! Check your email for confirmation."
         else
+          # Rails.logger.error "Booking validation failed: #{@booking.errors.full_messages.join(', ')}"
           reload_form_data
-          flash.now[:error] = "Please fix the errors below"
+          flash.now[:error] = "Please fix the errors below: #{@booking.errors.full_messages.join(', ')}"
           render :new
         end
       else
@@ -82,11 +83,15 @@ module Schedules
       
       # Set the date and times
       timezone = ActiveSupport::TimeZone[@booking.timezone_offset || "Asia/Jakarta"]
-      date_str = selected_date.strftime("%m/%d/%Y")
+      date_str = selected_date.strftime("%Y-%m-%d")  # Use YYYY-MM-DD format to avoid confusion
+      
+      # Rails.logger.info "Setting booking date: #{date_str}, start_time: #{slot_info[:start]}, end_time: #{slot_info[:end]}"
       
       @booking.date = date_str
       @booking.start_time = slot_info[:start]
       @booking.end_time = slot_info[:end]
+      
+      # Rails.logger.info "Booking after setting times - date: #{@booking.date}, start_time: #{@booking.start_time}, end_time: #{@booking.end_time}"
       
       true
     end
