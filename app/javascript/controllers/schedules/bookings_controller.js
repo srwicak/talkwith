@@ -517,10 +517,14 @@ export default class extends Controller {
           }
         }
         // UDI x ITB specific errors
-        else if (error.includes("October 2025 for UDI x ITB")) {
-          friendlyErrors.push("❌ UDI x ITB bookings are only available in October 2025");
+        else if (error.includes("between October–December 2025 for UDI x ITB")) {
+          friendlyErrors.push("❌ UDI x ITB bookings are available between October–December 2025");
+        } else if (error.includes("October 2025 for UDI x ITB")) {
+          // Backward compatibility with older server error message
+          friendlyErrors.push("❌ UDI x ITB bookings are available between October–December 2025");
         } else if (error.includes("current Sunday week for UDI x ITB")) {
-          friendlyErrors.push("❌ You cannot schedule UDI x ITB meetings outside of the current week");
+          // This restriction has been removed, but handle legacy messages gracefully
+          friendlyErrors.push("❌ UDI x ITB bookings are available between October–December 2025");
         } else if (error.includes("Thursday or Friday for UDI x ITB")) {
           friendlyErrors.push("❌ UDI x ITB meetings can only be scheduled on Thursday or Friday");
         } else if (error.includes("20 minutes for UDI x ITB")) {

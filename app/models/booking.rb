@@ -305,14 +305,11 @@ class Booking < ApplicationRecord
     else
       # Special validation for UDI x ITB bookings
       if special_booking?
-        # Only allow October 2025
-        unless parsed_date.year == 2025 && parsed_date.month == 10
-          errors.add(:date, "must be in October 2025 for UDI x ITB bookings")
-        end
-        
-        # For UDI x ITB bookings, only allow dates within the current Sunday week
-        unless date_within_current_sunday_week?(parsed_date)
-          errors.add(:date, "must be within the current Sunday week for UDI x ITB bookings")
+        # Allow October–December 2025 (inclusive)
+        allowed_start = Date.new(2025, 10, 1)
+        allowed_end   = Date.new(2025, 12, 31)
+        unless parsed_date.between?(allowed_start, allowed_end)
+          errors.add(:date, "must be between October–December 2025 for UDI x ITB bookings")
         end
       else
         # Normal validation for regular bookings

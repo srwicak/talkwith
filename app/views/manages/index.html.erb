@@ -22,11 +22,9 @@
           class: "bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded" %>
     </div>
   </div>
-  
   <!-- Pending Appointments -->
   <div class="mb-8">
     <h2 class="text-2xl font-semibold mb-4 text-orange-600">Pending Appointments (<%= @pending_bookings.count %>)</h2>
-    
     <% if @pending_bookings.any? %>
       <div class="bg-white shadow-md rounded-lg overflow-hidden">
         <table class="min-w-full divide-y divide-gray-200">
@@ -87,11 +85,9 @@
       </div>
     <% end %>
   </div>
-
   <!-- Approved Appointments -->
   <div>
     <h2 class="text-2xl font-semibold mb-4 text-green-600">Approved Appointments (<%= @approved_bookings.count %>)</h2>
-    
     <% if @approved_bookings.any? %>
       <div class="bg-white shadow-md rounded-lg overflow-hidden">
         <table class="min-w-full divide-y divide-gray-200">
@@ -157,7 +153,6 @@
     <% end %>
   </div>
 </div>
-
 <!-- Modal for Appointment Details -->
 <div id="appointmentModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
   <div class="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
@@ -172,7 +167,6 @@
           </svg>
         </button>
       </div>
-      
       <!-- Modal Body -->
       <div class="mt-4">
         <div class="space-y-4">
@@ -182,7 +176,6 @@
             <p class="text-sm"><span class="font-medium">Name:</span> <span id="modalName"></span></p>
             <p class="text-sm"><span class="font-medium">Email:</span> <span id="modalEmail"></span></p>
           </div>
-          
           <!-- Schedule -->
           <div class="bg-blue-50 p-4 rounded-lg">
             <h4 class="font-semibold text-gray-700 mb-2">📅 Schedule</h4>
@@ -190,13 +183,11 @@
             <p class="text-sm"><span class="font-medium">End:</span> <span id="modalEndTime"></span></p>
             <p class="text-sm"><span class="font-medium">Duration:</span> <span id="modalDuration"></span> minutes</p>
           </div>
-          
           <!-- Subject -->
           <div class="bg-purple-50 p-4 rounded-lg">
             <h4 class="font-semibold text-gray-700 mb-2">📝 Subject</h4>
             <p class="text-sm" id="modalSubject"></p>
           </div>
-          
           <!-- Description -->
           <div class="bg-green-50 p-4 rounded-lg">
             <h4 class="font-semibold text-gray-700 mb-2">💬 Description</h4>
@@ -204,7 +195,6 @@
           </div>
         </div>
       </div>
-      
       <!-- Modal Footer -->
       <div class="flex justify-end mt-6 pt-4 border-t">
         <button onclick="closeModal()" 
@@ -215,39 +205,38 @@
     </div>
   </div>
 </div>
-
 <script>
-function showAppointmentDetails(id, name, email, subject, description, startTime, endTime, duration) {
-  // Populate modal with appointment data
-  document.getElementById('modalName').textContent = name;
-  document.getElementById('modalEmail').textContent = email;
-  document.getElementById('modalSubject').textContent = subject;
-  document.getElementById('modalDescription').innerHTML = description.replace(/\n/g, '<br>');
-  document.getElementById('modalStartTime').textContent = startTime;
-  document.getElementById('modalEndTime').textContent = endTime;
-  document.getElementById('modalDuration').textContent = duration;
-  
-  // Show modal
-  document.getElementById('appointmentModal').classList.remove('hidden');
-  document.body.style.overflow = 'hidden'; // Prevent background scrolling
-}
+  function showAppointmentDetails(id, name, email, subject, description, startTime, endTime, duration) {
+    // Populate modal with appointment data
+    document.getElementById('modalName').textContent = name;
+    document.getElementById('modalEmail').textContent = email;
+    document.getElementById('modalSubject').textContent = subject;
+    document.getElementById('modalDescription').innerHTML = description.replace(/\n/g, '<br>');
+    document.getElementById('modalStartTime').textContent = startTime;
+    document.getElementById('modalEndTime').textContent = endTime;
+    document.getElementById('modalDuration').textContent = duration;
 
-function closeModal() {
-  document.getElementById('appointmentModal').classList.add('hidden');
-  document.body.style.overflow = 'auto'; // Restore scrolling
-}
-
-// Close modal when clicking outside of it
-document.getElementById('appointmentModal').addEventListener('click', function(e) {
-  if (e.target === this) {
-    closeModal();
+    // Show modal
+    document.getElementById('appointmentModal').classList.remove('hidden');
+    document.body.style.overflow = 'hidden'; // Prevent background scrolling
   }
-});
 
-// Close modal with Escape key
-document.addEventListener('keydown', function(e) {
-  if (e.key === 'Escape') {
-    closeModal();
+  function closeModal() {
+    document.getElementById('appointmentModal').classList.add('hidden');
+    document.body.style.overflow = 'auto'; // Restore scrolling
   }
-});
+
+  // Close modal when clicking outside of it
+  document.getElementById('appointmentModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+      closeModal();
+    }
+  });
+
+  // Close modal with Escape key
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+      closeModal();
+    }
+  });
 </script>
