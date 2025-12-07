@@ -434,6 +434,11 @@ class Booking < ApplicationRecord
     RemoveGoogleCalendarEventJob.perform_later(google_calendar_event_id)
   end
 
+  # Called by after_commit on destroy to enqueue removal from Google Calendar
+  def remove_from_google_calendar
+    schedule_google_calendar_removal
+  end
+
   private
 
   def block_manual_udi_booking
