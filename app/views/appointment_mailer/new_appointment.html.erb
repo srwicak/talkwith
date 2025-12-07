@@ -43,14 +43,26 @@
       
       <div style="background: #e8f5e8; padding: 15px; border-radius: 8px; margin: 15px 0; border: 2px solid #4CAF50;">
         <h3 style="margin-top: 0; color: #2E7D32;">🎥 Meeting Information</h3>
-        <p><strong>Zoom Meeting:</strong></p>
-        <div style="background: white; padding: 10px; border-radius: 5px;">
-          <p><strong>Meeting ID:</strong> 834 951 2627</p>
-          <p><strong>Passcode:</strong> fS2XXP</p>
-          <p><strong>Join URL:</strong> <a href="https://zoom.us/j/8349512627?pwd=fS2XXP" style="color: #0066cc;">https://zoom.us/j/8349512627?pwd=fS2XXP</a></p>
-        </div>
+        <% if @appointment.meeting_link.present? %>
+          <p><strong>Google Meet:</strong></p>
+          <div style="background: white; padding: 15px; border-radius: 5px; text-align: center;">
+            <a href="<%= @appointment.meeting_link %>" style="display: inline-block; padding: 12px 30px; background: #4285f4; color: white; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">
+              🎥 Join Google Meet
+            </a>
+          </div>
+          <p style="font-size: 12px; color: #666; margin-top: 10px;">
+            💡 Click the button above to join the meeting. The link will be active 15 minutes before the scheduled time.
+          </p>
+        <% else %>
+          <div style="background: #fff3cd; padding: 15px; border-radius: 5px;">
+            <p><strong>⏳ Google Meet link will be available soon</strong></p>
+            <p style="font-size: 12px; color: #666; margin: 5px 0 0 0;">
+              The meeting link is being generated. You'll receive it in your calendar invitation or can check your appointment details page.
+            </p>
+          </div>
+        <% end %>
         <p style="font-size: 12px; color: #666; margin-top: 10px;">
-          💡 This is a special UDImpact ITB Hub 1:1 coaching session. The Zoom link will be active 5 minutes before the scheduled time.
+          💡 This is a special UDImpact ITB Hub 1:1 coaching session. Please join 5-10 minutes before the scheduled time.
         </p>
       </div>
     <% end %>
@@ -67,7 +79,7 @@
         <li>Click the button below to view your appointment details</li>
         <li>Download the calendar file (.ics) to add this to your calendar</li>
         <% if @is_special_booking %>
-          <li>Join the Zoom meeting using the provided link 5-10 minutes early</li>
+          <li>Join the Google Meet using the provided link 5-10 minutes early</li>
         <% end %>
         <li>Contact us if you need to make any changes</li>
       </ul>

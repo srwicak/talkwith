@@ -10,7 +10,7 @@
       .text-center.py-12
         .text-4xl.mb-4 📅
         p.text-xl.text-gray-600 No UDI dates this week
-        p.text-gray-500 Thursday or Friday dates will appear here
+        p.text-gray-500 Enabled dates will appear here when available
         
     - else
       p.text-green-600.mb-4 Found #{@available_dates.count} UDI dates this week
@@ -61,10 +61,14 @@
                 p.text-gray-500 No slots found for this date
         
         .mt-6.flex.justify-between
-          = link_to "🔄 Reset All", reset_week_manages_udi_settings_path, method: :post, 
-              class: "px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600",
-              data: { confirm: "Are you sure you want to enable all slots for this week?", turbo_method: :post }
-          = form.submit "💾 Update Settings", class: "px-6 py-2 bg-purple-600 text-white rounded hover:bg-purple-700"
+          .space-x-3
+            = button_to "🏖️ Disable All Week", disable_all_week_manages_udi_settings_path, method: :post, 
+                class: "px-4 py-2 bg-orange-500 text-white rounded hover:bg-orange-600 font-medium",
+                data: { confirm: "This will disable ALL slots for this week (Holiday Mode). Continue?" }
+            = button_to "🔄 Enable All Week", reset_week_manages_udi_settings_path, method: :post, 
+                class: "px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 font-medium",
+                data: { confirm: "This will enable all slots for this week. Continue?" }
+          = form.submit "💾 Update Settings", class: "px-6 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 font-medium"
     
     .mt-6.text-center
       = link_to "← Back to Dashboard", manage_appointments_path, class: "text-blue-600 hover:text-blue-800"

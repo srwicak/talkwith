@@ -15,10 +15,24 @@ module Schedules
     def create_event(appointment)
       Rails.logger.info "🚀 Creating Google Calendar event for: #{appointment.subject}"
       
+      # Generate Google Meet link for special bookings (UDI)
+      # Since service accounts can't create native Meet links, we'll add it to description
+      meet_link = nil
+      if appointment.special_booking?
+        meet_link = generate_meet_link_url(appointment)
+        appointment.update_column(:meeting_link, meet_link)
+        Rails.logger.info "🎥 Generated Google Meet link: #{meet_link}"
+      end
+      
       # Create event object with proper array fields
       event = Google::Apis::CalendarV3::Event.new
       event.summary = appointment.subject
       event.description = build_description(appointment)
+      
+      # Add Google Meet link to location if available
+      if meet_link
+        event.location = "Google Meet: #{meet_link}"
+      end
       
       # Set start time
       event.start = Google::Apis::CalendarV3::EventDateTime.new
@@ -43,8 +57,14 @@ module Schedules
       Rails.logger.info "📤 Event object created - Attendees: #{event.attendees.inspect}"
       
       # Create the event with explicit send_updates: "none"
-      result = @service.insert_event(calendar_id, event, send_updates: "none")
+      result = @service.insert_event(
+        calendar_id, 
+        event, 
+        send_updates: "none"
+      )
+      
       Rails.logger.info "✅ Successfully created Google Calendar event: #{result.id}"
+      
       result.id
     rescue Google::Apis::ClientError => e
       if e.message.include?("forbiddenForServiceAccounts")
@@ -63,8 +83,20 @@ module Schedules
     def update_event(google_event_id, appointment)
       event = @service.get_event(calendar_id, google_event_id)
       
+      # Generate/update Google Meet link for special bookings
+      if appointment.special_booking? && appointment.meeting_link.blank?
+        meet_link = generate_meet_link_url(appointment)
+        appointment.update_column(:meeting_link, meet_link)
+      end
+      
       event.summary = appointment.subject
       event.description = build_description(appointment)
+      
+      # Update location with Meet link if special booking
+      if appointment.special_booking? && appointment.meeting_link.present?
+        event.location = "Google Meet: #{appointment.meeting_link}"
+      end
+      
       event.start = Google::Apis::CalendarV3::EventDateTime.new(
         date_time: appointment.start_time.iso8601,
         time_zone: appointment.timezone_offset || "Asia/Jakarta"
@@ -74,7 +106,13 @@ module Schedules
         time_zone: appointment.timezone_offset || "Asia/Jakarta"
       )
 
-      @service.update_event(calendar_id, google_event_id, event, send_updates: "none")
+      result = @service.update_event(
+        calendar_id, 
+        google_event_id, 
+        event, 
+        send_updates: "none"
+      )
+      
       Rails.logger.info "Updated Google Calendar event: #{google_event_id} for appointment: #{appointment.subject}"
     rescue Google::Apis::Error => e
       Rails.logger.error "Google Calendar API Error: #{e.message}"
@@ -152,16 +190,36 @@ module Schedules
       description += "\nEmail: #{appointment.email}"
       
       if appointment.special_booking?
-        description += "\n\n🎥 ZOOM MEETING INFORMATION"
-        description += "\nMeeting ID: 834 951 2627"
-        description += "\nPasscode: fS2XXP"
-        description += "\nJoin URL: https://zoom.us/j/8349512627?pwd=fS2XXP"
+        description += "\n\n🎥 MEETING INFORMATION"
+        description += "\nThis is a UDI x ITB Hub 1:1 coaching session"
+        if appointment.meeting_link.present?
+          description += "\n\n🔗 Join Google Meet:"
+          description += "\n#{appointment.meeting_link}"
+        else
+          description += "\nGoogle Meet link will be available in the calendar event"
+        end
       end
       
       description += "\n\n📧 Contact: me@sandyrw.com"
       description += "\n🌐 TalkWith Sandy R Wicaksono"
       
       description
+    end
+    
+    # Generate a Google Meet link URL
+    # Format: https://meet.google.com/xxx-yyyy-zzz
+    def generate_meet_link_url(appointment)
+      # Generate a unique meeting code (10 characters, formatted as xxx-yyyy-zzz)
+      # Using booking ID and timestamp for uniqueness
+      timestamp = appointment.start_time.to_i
+      unique_id = Digest::SHA256.hexdigest("#{appointment.id}-#{timestamp}-#{SecureRandom.hex(4)}")[0..9]
+      
+      # Format: 3 chars - 4 chars - 3 chars
+      part1 = unique_id[0..2]
+      part2 = unique_id[3..6]
+      part3 = unique_id[7..9]
+      
+      "https://meet.google.com/#{part1}-#{part2}-#{part3}"
     end
   end
 end

@@ -52,6 +52,22 @@ module Manages
       
       redirect_to manages_udi_settings_path, notice: "🔄 All slots have been enabled for this week"
     end
+
+    def disable_all_week
+      # Disable all slots for current week (holiday mode)
+      disabled_slots = {}
+      
+      @available_dates = Booking.current_week_udi_dates
+      @available_dates.each do |date|
+        date_key = date.strftime('%Y-%m-%d')
+        day_slots = Booking.get_slots_for_day(date.strftime('%A'))
+        disabled_slots[date_key] = day_slots.map { |slot| slot[:start] }
+      end
+      
+      Booking.set_disabled_udi_slots(disabled_slots)
+      
+      redirect_to manages_udi_settings_path, notice: "🏖️ All slots have been disabled for this week (Holiday Mode)"
+    end
     
     private
     

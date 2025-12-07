@@ -48,8 +48,21 @@ Rails.application.routes.draw do
         collection do
           patch :update_slots
           post :reset_week
+          post :disable_all_week
         end
       end
+
+      # UDI Configuration Management (Day & Time Settings)
+      resources :udi_configurations do
+        member do
+          patch :toggle_enabled
+        end
+      end
+      
+      # OAuth2 Setup for Google Meet (Gmail B)
+      get 'oauth/setup', to: 'oauth#setup', as: 'oauth_setup'
+      post 'oauth/callback', to: 'oauth#callback', as: 'callback_oauth'
+      post 'oauth/reset', to: 'oauth#reset', as: 'reset_oauth'
     end
 
     get "appointments", to: redirect("/")

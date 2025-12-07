@@ -8,30 +8,39 @@ module Schedules
         e.dtend = appointment.end_time
         e.summary = appointment.subject
         
-        # Enhanced description with Zoom info for special bookings
+        # Enhanced description with meeting info for special bookings
         description = appointment.description
         
         if appointment.special_booking?
-          zoom_info = "\n\n" + "="*50 + "\n"
-          zoom_info += "🎥 ZOOM MEETING INFORMATION\n"
-          zoom_info += "="*50 + "\n"
-          zoom_info += "Meeting ID: 834 951 2627\n"
-          zoom_info += "Passcode: fS2XXP\n"
-          zoom_info += "Join URL: https://zoom.us/j/8349512627?pwd=fS2XXP\n\n"
-          zoom_info += "📝 Instructions:\n"
-          zoom_info += "- Join the meeting 3 minutes early\n"
-          zoom_info += "- This is a UDImpact ITB Hub 1:1 coaching session\n"
-          zoom_info += "- Meeting link will be active 5 minutes before start time\n"
-          zoom_info += "="*50
+          meeting_info = "\n\n" + "="*50 + "\n"
+          meeting_info += "🎥 MEETING INFORMATION\n"
+          meeting_info += "="*50 + "\n"
           
-          description += zoom_info
+          if appointment.meeting_link.present?
+            meeting_info += "Google Meet: #{appointment.meeting_link}\n\n"
+          else
+            meeting_info += "Meeting link will be sent via email shortly\n\n"
+          end
+          
+          meeting_info += "📝 Instructions:\n"
+          meeting_info += "- Join the meeting 5-10 minutes early\n"
+          meeting_info += "- This is a UDI x ITB Hub 1:1 coaching session\n"
+          meeting_info += "- Meeting link will be active 15 minutes before start time\n"
+          meeting_info += "="*50
+          
+          description += meeting_info
         end
         
         e.description = description
         
         # Add location for special bookings
         if appointment.special_booking?
-          e.location = "Zoom Meeting: https://zoom.us/j/8349512627?pwd=fS2XXP"
+          if appointment.meeting_link.present?
+            e.location = "Google Meet: #{appointment.meeting_link}"
+            e.url = Icalendar::Values::Uri.new(appointment.meeting_link)
+          else
+            e.location = "Google Meet (link will be sent)"
+          end
         end
         
         # Add alarm/reminder
@@ -45,8 +54,8 @@ module Schedules
         if appointment.special_booking?
           e.alarm do |a|
             a.action = "DISPLAY"
-            a.description = "This is a UDImpact ITB Hub 1:1 coaching session - Join Zoom in 3 minutes"
-            a.trigger = "-PT3M" # 3 minutes before
+            a.description = "This is a UDI x ITB Hub 1:1 coaching session - Join Google Meet in 5 minutes"
+            a.trigger = "-PT5M" # 5 minutes before
           end
         end
         

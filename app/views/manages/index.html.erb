@@ -3,9 +3,13 @@
   <div class="flex justify-between items-center mb-6">
     <div>
       <h1 class="text-3xl font-bold">Appointment Management</h1>
-      <div class="mt-1">
-        <%= link_to "🎯 Manage UDI x ITB Time Slots", manages_udi_settings_path,
+      <div class="mt-1 flex gap-4">
+        <%= link_to "🎯 Manage UDI Time Slots", manages_udi_settings_path,
             class: "text-purple-600 hover:text-purple-800 font-medium text-sm" %>
+        <%= link_to "⚙️ Configure UDI Days & Hours", manages_udi_configurations_path,
+            class: "text-blue-600 hover:text-blue-800 font-medium text-sm" %>
+        <%= link_to "🔐 OAuth2 Setup (Google Meet)", manages_oauth_setup_path,
+            class: "text-green-600 hover:text-green-800 font-medium text-sm" %>
       </div>
     </div>
     <div class="flex gap-3">

@@ -124,6 +124,9 @@ class SyncFromGoogleCalendarJob < ApplicationJob
     # Set date for validation (Booking model requires it)
     date_for_validation = start_time.strftime("%m/%d/%Y")
     
+    # Extract Google Meet link if available
+    meet_link = extract_meeting_link(event)
+    
     # Update booking with latest data from Google Calendar (Google Calendar has priority)
     if booking.update(
       subject: summary,
@@ -132,6 +135,7 @@ class SyncFromGoogleCalendarJob < ApplicationJob
       end_time: end_time,
       date: date_for_validation,
       timezone_offset: event.start.time_zone || "Asia/Jakarta",
+      meeting_link: meet_link,
       is_approved: true, # Ensure it stays approved
       last_synced_at: Time.current # Track when we last synced
     )
@@ -150,6 +154,9 @@ class SyncFromGoogleCalendarJob < ApplicationJob
     # Ensure name is at least 3 characters
     safe_name = attendee_info[:name].to_s.length >= 3 ? attendee_info[:name] : "Google Calendar User"
     
+    # Extract Google Meet link if available
+    meet_link = extract_meeting_link(event)
+    
     booking = Booking.new(
       name: safe_name,
       email: attendee_info[:email],
@@ -158,6 +165,7 @@ class SyncFromGoogleCalendarJob < ApplicationJob
       start_time: start_time,
       end_time: end_time,
       timezone_offset: event.start.time_zone || "Asia/Jakarta",
+      meeting_link: meet_link,
       is_approved: true,
       google_calendar_event_id: event.id,
       date: date_for_validation,
@@ -174,5 +182,37 @@ class SyncFromGoogleCalendarJob < ApplicationJob
       Rails.logger.error "Failed to create booking from Google event #{event.id}: #{booking.errors.full_messages}"
       nil
     end
+  end
+  
+  def extract_meeting_link(event)
+    # First try to get from conference_data (native Google Meet)
+    if event.conference_data&.entry_points&.any?
+      video_entry = event.conference_data.entry_points.find { |ep| ep.entry_point_type == 'video' }
+      if video_entry
+        Rails.logger.info "Found Google Meet link from conference_data: #{video_entry.uri}"
+        return video_entry.uri
+      end
+    end
+    
+    # Fallback: try to extract from location field
+    if event.location&.include?('meet.google.com')
+      # Extract URL from location
+      match = event.location.match(/https:\/\/meet\.google\.com\/[a-z]{3}-[a-z]{4}-[a-z]{3}/)
+      if match
+        Rails.logger.info "Found Google Meet link from location: #{match[0]}"
+        return match[0]
+      end
+    end
+    
+    # Fallback: try to extract from description
+    if event.description&.include?('meet.google.com')
+      match = event.description.match(/https:\/\/meet\.google\.com\/[a-z]{3}-[a-z]{4}-[a-z]{3}/)
+      if match
+        Rails.logger.info "Found Google Meet link from description: #{match[0]}"
+        return match[0]
+      end
+    end
+    
+    nil
   end
 end

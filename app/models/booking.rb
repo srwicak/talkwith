@@ -8,6 +8,7 @@
 #  end_time                 :datetime         not null
 #  is_approved              :boolean          default(FALSE)
 #  last_synced_at           :datetime
+#  meeting_link             :string
 #  name                     :string           not null
 #  secret_key               :string
 #  slug                     :string
@@ -72,65 +73,6 @@ class Booking < ApplicationRecord
     subject.include?("[UDIxITB]")
   end
 
-  # Define UDI x ITB time slots for current week
-  UDI_ITB_TIME_SLOTS = {
-    # Thursday slots (23 total)
-    thursday: [
-      # Morning Session (08:00-12:00) - 7 slots
-      { start: "08:00", end: "08:30", label: "08:00-08:30", session: "morning" },
-      { start: "08:35", end: "09:05", label: "08:35-09:05", session: "morning" },
-      { start: "09:10", end: "09:40", label: "09:10-09:40", session: "morning" },
-      { start: "09:45", end: "10:15", label: "09:45-10:15", session: "morning" },
-      { start: "10:20", end: "10:50", label: "10:20-10:50", session: "morning" },
-      { start: "10:55", end: "11:25", label: "10:55-11:25", session: "morning" },
-      { start: "11:30", end: "12:00", label: "11:30-12:00", session: "morning" },
-      
-      # Afternoon Session (13:00-17:30) - 8 slots
-      { start: "13:00", end: "13:30", label: "13:00-13:30", session: "afternoon" },
-      { start: "13:35", end: "14:05", label: "13:35-14:05", session: "afternoon" },
-      { start: "14:10", end: "14:40", label: "14:10-14:40", session: "afternoon" },
-      { start: "14:45", end: "15:15", label: "14:45-15:15", session: "afternoon" },
-      { start: "15:20", end: "15:50", label: "15:20-15:50", session: "afternoon" },
-      { start: "15:55", end: "16:25", label: "15:55-16:25", session: "afternoon" },
-      { start: "16:30", end: "17:00", label: "16:30-17:00", session: "afternoon" },
-      { start: "17:05", end: "17:35", label: "17:05-17:35", session: "afternoon" },
-      
-      # Evening Session (19:00-22:00) - 5 slots
-      { start: "19:00", end: "19:30", label: "19:00-19:30", session: "evening" },
-      { start: "19:35", end: "20:05", label: "19:35-20:05", session: "evening" },
-      { start: "20:10", end: "20:40", label: "20:10-20:40", session: "evening" },
-      { start: "20:45", end: "21:15", label: "20:45-21:15", session: "evening" },
-      { start: "21:20", end: "21:50", label: "21:20-21:50", session: "evening" }
-    ],
-    
-    # Friday slots (21 total)
-    friday: [
-      # Morning Session (08:00-11:00) - 5 slots
-      { start: "08:00", end: "08:30", label: "08:00-08:30", session: "morning" },
-      { start: "08:35", end: "09:05", label: "08:35-09:05", session: "morning" },
-      { start: "09:10", end: "09:40", label: "09:10-09:40", session: "morning" },
-      { start: "09:45", end: "10:15", label: "09:45-10:15", session: "morning" },
-      { start: "10:20", end: "10:50", label: "10:20-10:50", session: "morning" },
-      
-      # Afternoon Session (13:00-17:30) - 8 slots
-      { start: "13:00", end: "13:30", label: "13:00-13:30", session: "afternoon" },
-      { start: "13:35", end: "14:05", label: "13:35-14:05", session: "afternoon" },
-      { start: "14:10", end: "14:40", label: "14:10-14:40", session: "afternoon" },
-      { start: "14:45", end: "15:15", label: "14:45-15:15", session: "afternoon" },
-      { start: "15:20", end: "15:50", label: "15:20-15:50", session: "afternoon" },
-      { start: "15:55", end: "16:25", label: "15:55-16:25", session: "afternoon" },
-      { start: "16:30", end: "17:00", label: "16:30-17:00", session: "afternoon" },
-      { start: "17:05", end: "17:35", label: "17:05-17:35", session: "afternoon" },
-      
-      # Evening Session (19:00-22:00) - 5 slots
-      { start: "19:00", end: "19:30", label: "19:00-19:30", session: "evening" },
-      { start: "19:35", end: "20:05", label: "19:35-20:05", session: "evening" },
-      { start: "20:10", end: "20:40", label: "20:10-20:40", session: "evening" },
-      { start: "20:45", end: "21:15", label: "20:45-21:15", session: "evening" },
-      { start: "21:20", end: "21:50", label: "21:20-21:50", session: "evening" }
-    ]
-  }.freeze
-
   # Get disabled slots from cache/settings
   def self.get_disabled_udi_slots
     Rails.cache.fetch("disabled_udi_slots", expires_in: 1.hour) do
@@ -144,39 +86,57 @@ class Booking < ApplicationRecord
   end
 
   # Get all slots for a specific day
-  def self.get_slots_for_day(day_name)
-    case day_name.downcase
+  def self.get_slots_for_day(day_name_or_number)
+    # Convert day name/number to day_of_week (0-6)
+    day_of_week = case day_name_or_number.to_s.downcase
+    when 'sunday', 'minggu', '0'
+      0
+    when 'monday', 'senin', '1'
+      1
+    when 'tuesday', 'selasa', '2'
+      2
+    when 'wednesday', 'rabu', '3'
+      3
     when 'thursday', 'kamis', '4'
-      UDI_ITB_TIME_SLOTS[:thursday]
-    when 'friday', 'jumat', '5'  
-      UDI_ITB_TIME_SLOTS[:friday]
+      4
+    when 'friday', 'jumat', '5'
+      5
+    when 'saturday', 'sabtu', '6'
+      6
     else
-      []
+      return []
     end
+
+    UdiConfiguration.generate_time_slots_for_day(day_of_week)
   end
 
   # Get available UDI slots for a specific date
   def self.available_udi_slots_for_date(date)
     return [] unless date.is_a?(Date)
-    return [] unless [4, 5].include?(date.wday) # Only Thursday(4) and Friday(5)
-    
+
+    # Check if this day is enabled in configuration
+    # wday: 0=Sunday, 1=Monday, ..., 6=Saturday
+    # UdiConfiguration now uses: 0=Sunday, 1=Monday, ..., 6=Saturday
+    day_of_week = date.wday # Use directly: 0-6
+    return [] unless UdiConfiguration.enabled_days.include?(day_of_week)
+
     # Get slots for the day
     day_slots = get_slots_for_day(date.strftime('%A'))
     return [] if day_slots.empty?
-    
+
     # Get disabled slots
     disabled_slots = get_disabled_udi_slots
     disabled_key = "#{date.strftime('%Y-%m-%d')}"
     disabled_for_date = disabled_slots[disabled_key] || []
-    
+
     # Get already booked UDI slots
     booked_udi_slots = Booking.where(
       "DATE(start_time) = ? AND subject LIKE ? AND is_approved = ?",
       date,
-      "%[UDIxITB]%", 
+      "%[UDIxITB]%",
       true
     ).pluck(:start_time).map { |time| time.strftime("%H:%M") }
-    
+
     # Get manual bookings (non-UDI) that might overlap with UDI slots
     manual_bookings = Booking.where(
       "DATE(start_time) = ? AND subject NOT LIKE ? AND is_approved = ?",
@@ -184,28 +144,28 @@ class Booking < ApplicationRecord
       "%[UDIxITB]%",
       true
     ).pluck(:start_time, :end_time)
-    
+
     # Filter available slots
     day_slots.reject do |slot|
       slot_start = Time.parse(slot[:start])
       slot_end = Time.parse(slot[:end])
-      
+
       # Check if slot is disabled by admin
       admin_disabled = disabled_for_date.include?(slot[:start])
-      
+
       # Check if slot is already booked by UDI
       udi_booked = booked_udi_slots.include?(slot[:start])
-      
+
       # Check if slot overlaps with manual bookings
       manual_overlap = manual_bookings.any? do |manual_start, manual_end|
         # Convert to same date for comparison
         manual_start_time = Time.parse(manual_start.strftime("%H:%M"))
         manual_end_time = Time.parse(manual_end.strftime("%H:%M"))
-        
+
         # Check overlap: slot overlaps if it starts before manual ends and ends after manual starts
         slot_start < manual_end_time && slot_end > manual_start_time
       end
-      
+
       admin_disabled || udi_booked || manual_overlap
     end
   end
@@ -213,17 +173,27 @@ class Booking < ApplicationRecord
   # Get slots grouped by session for better UI
   def self.get_grouped_slots_for_date(date)
     available_slots = available_udi_slots_for_date(date)
-    
+
     grouped = {
       'morning' => [],
-      'afternoon' => [], 
+      'afternoon' => [],
       'evening' => []
     }
-    
+
     available_slots.each do |slot|
-      grouped[slot[:session]] << slot
+      # Determine session based on time
+      hour = slot[:start].split(':')[0].to_i
+      session = if hour < 12
+                  'morning'
+                elsif hour < 17
+                  'afternoon'
+                else
+                  'evening'
+                end
+
+      grouped[session] << slot
     end
-    
+
     # Remove empty sessions and return with metadata
     grouped.reject { |session, slots| slots.empty? }.transform_values do |slots|
       {
@@ -233,20 +203,21 @@ class Booking < ApplicationRecord
     end
   end
 
-  # Get current week Thursday and Friday dates
+  # Get current week UDI dates based on enabled days in configuration
   def self.current_week_udi_dates
     current_week_start = Date.current.beginning_of_week(:sunday)
     dates = []
-    
-    # Thursday
-    thursday = current_week_start + 4.days
-    dates << thursday if thursday >= Date.current
-    
-    # Friday  
-    friday = current_week_start + 5.days
-    dates << friday if friday >= Date.current
-    
-    dates
+
+    enabled_days = UdiConfiguration.enabled_days
+
+    # Generate dates for each enabled day
+    enabled_days.each do |day_of_week|
+      # day_of_week: 0=Sunday, 1=Monday, ..., 6=Saturday
+      date = current_week_start + day_of_week.days
+      dates << date if date >= Date.current
+    end
+
+    dates.sort
   end
 
   # Block manual UDI booking validation
@@ -277,7 +248,7 @@ class Booking < ApplicationRecord
 
   def parse_date_attribute(date_str)
     return nil unless date_str.present?
-    
+
     # Try YYYY-MM-DD format first (new format)
     begin
       return Date.strptime(date_str, "%Y-%m-%d")
@@ -298,7 +269,7 @@ class Booking < ApplicationRecord
   def valid_date_range
     return unless date.present? # Skip validation if date is not set (for existing records)
     return if from_google_calendar? # Skip date range validation for Google Calendar events
-    
+
     parsed_date = parse_date_attribute(date)
     if parsed_date.nil?
       errors.add(:date, "is not a valid date format")
@@ -323,7 +294,7 @@ class Booking < ApplicationRecord
   def valid_time_range
     if start_time && end_time
       duration = (end_time - start_time) / 60
-      
+
       # Special validation for UDI x ITB bookings
       if special_booking?
         if duration < 20
@@ -348,25 +319,25 @@ class Booking < ApplicationRecord
   def no_overlap_bookings
     # Skip overlap validation for UDI bookings since we use structured time slots
     return if special_booking?
-    
+
     # For non-UDI bookings, ensure we have proper datetime objects for comparison
     return unless date.present? && start_time.present? && end_time.present?
-    
+
     # Convert times to proper datetime objects if they're still strings
     if start_time.is_a?(String) || end_time.is_a?(String)
       timezone = ActiveSupport::TimeZone[timezone_offset]
       parsed_date = parse_date_attribute(date)
       return unless parsed_date
-      
+
       date_for_parsing = parsed_date.strftime("%Y-%m-%d")
-      
+
       temp_start_time = start_time.is_a?(String) ? timezone.parse("#{date_for_parsing} #{start_time}").utc : start_time
       temp_end_time = end_time.is_a?(String) ? timezone.parse("#{date_for_parsing} #{end_time}").utc : end_time
     else
       temp_start_time = start_time
       temp_end_time = end_time
     end
-    
+
     # Find overlapping bookings (simple overlap check for non-UDI bookings)
     overlapping_bookings = Booking.where.not(id: id || 0)
       .where(is_approved: true)
@@ -374,7 +345,7 @@ class Booking < ApplicationRecord
         # Simple overlap check: bookings overlap if one starts before the other ends
         temp_start_time < booking.end_time && temp_end_time > booking.start_time
       end
-    
+
     if overlapping_bookings.any?
       errors.add(:base, "Booking overlaps with an approved schedule")
     end
@@ -387,16 +358,16 @@ class Booking < ApplicationRecord
 
   def convert_times_to_utc
     return unless date.present? && start_time.present? && end_time.present?
-    
+
     timezone = ActiveSupport::TimeZone[timezone_offset]
-    
+
     # Parse date with explicit format to avoid ambiguity
     parsed_date = parse_date_attribute(date)
     return unless parsed_date
-    
+
     # Format as YYYY-MM-DD for consistent parsing
     date_for_parsing = parsed_date.strftime("%Y-%m-%d")
-    
+
     self.start_time = timezone.parse("#{date_for_parsing} #{start_time}").utc
     self.end_time = timezone.parse("#{date_for_parsing} #{end_time}").utc
   end
@@ -411,14 +382,19 @@ class Booking < ApplicationRecord
     return unless special_booking?
     return unless date.present?
     return if from_google_calendar? # Skip for Google Calendar events
-    
+
     parsed_date = parse_date_attribute(date)
     return unless parsed_date
-    
-    # Validate day of week (only Thursday and Friday allowed)
-    day_of_week = parsed_date.wday
-    unless [4, 5].include?(day_of_week) # 4 = Thursday, 5 = Friday
-      errors.add(:date, "must be on Thursday or Friday for UDI x ITB bookings")
+
+    # Validate day of week based on enabled configurations
+    # wday: 0=Sunday, 1=Monday, ..., 6=Saturday
+    # UdiConfiguration now uses: 0=Sunday, 1=Monday, ..., 6=Saturday
+    day_of_week = parsed_date.wday # Use directly: 0-6
+    enabled_days = UdiConfiguration.enabled_days
+
+    unless enabled_days.include?(day_of_week)
+      enabled_day_names = enabled_days.map { |d| UdiConfiguration::DAYS[d][:name_id] }.join(', ')
+      errors.add(:date, "harus pada hari #{enabled_day_names} untuk booking UDI x ITB")
     end
   end
 
@@ -427,13 +403,13 @@ class Booking < ApplicationRecord
     # Get current date in user's timezone
     user_timezone = ActiveSupport::TimeZone[timezone_offset] || Time.zone
     current_date = Time.current.in_time_zone(user_timezone).to_date
-    
+
     # Find the current Sunday (start of week)
     current_sunday = current_date.beginning_of_week(:sunday)
-    
+
     # Find the next Sunday (end of current week)
     next_sunday = current_sunday + 1.week
-    
+
     # Check if the given date is within current Sunday week
     date.between?(current_sunday, next_sunday - 1.day)
   end
@@ -447,14 +423,14 @@ class Booking < ApplicationRecord
   def sync_with_google_calendar
     return unless is_approved?
     return if google_calendar_event_id.present? # Skip if already synced or came from Google
-    
+
     Rails.logger.info "Syncing booking #{id} to Google Calendar"
     SyncGoogleCalendarJob.perform_later(self)
   end
 
   def schedule_google_calendar_removal
     return unless google_calendar_event_id.present?
-    
+
     RemoveGoogleCalendarEventJob.perform_later(google_calendar_event_id)
   end
 
@@ -464,7 +440,7 @@ class Booking < ApplicationRecord
     # Only block if this is NOT from the special UDI booking route
     return if defined?(@from_udi_route) && @from_udi_route
     return unless special_booking?
-    
+
     errors.add(:subject, "UDI x ITB bookings must be made through the special booking page. Please contact admin for the correct link.")
   end
 end

@@ -8,6 +8,7 @@
 #  end_time                 :datetime         not null
 #  is_approved              :boolean          default(FALSE)
 #  last_synced_at           :datetime
+#  meeting_link             :string
 #  name                     :string           not null
 #  secret_key               :string
 #  slug                     :string

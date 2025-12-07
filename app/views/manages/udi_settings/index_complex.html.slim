@@ -9,8 +9,9 @@
       p.text-gray-600.mt-2 Manage availability for UDI x ITB coaching sessions
     
     .flex.flex-wrap.gap-3
-      = button_to "🔄 Reset Week", manages_udi_settings_reset_week_path, method: :post, class: "px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors", confirm: "This will enable all slots for this week. Continue?"
-      = link_to "📊 Back to Dashboard", manages_path, class: "px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+      = button_to "🏖️ Disable All (Holiday)", disable_all_week_manages_udi_settings_path, method: :post, class: "px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors font-medium", data: { confirm: "This will disable ALL slots for this week. Continue?" }
+      = button_to "🔄 Enable All", reset_week_manages_udi_settings_path, method: :post, class: "px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors font-medium", data: { confirm: "This will enable all slots for this week. Continue?" }
+      = link_to "📊 Back to Dashboard", manages_path, class: "px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-medium"
 
   // Quick Stats
   .grid.grid-cols-2.lg:grid-cols-4.gap-4.mb-8
@@ -63,7 +64,7 @@
           .w-24.h-24.mx-auto.mb-6.bg-gray-100.rounded-full.flex.items-center.justify-center
             span.text-4xl.text-gray-400 📅
           h3.text-xl.font-medium.text-gray-600.mb-2 No UDI Dates This Week
-          p.text-gray-500 Thursday or Friday dates will appear here when available.
+          p.text-gray-500 Enabled dates will appear here when available.
           
       - else
         .space-y-8

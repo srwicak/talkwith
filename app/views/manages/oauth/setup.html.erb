@@ -1,0 +1,194 @@
+<div class="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+  <div class="max-w-3xl mx-auto">
+    <div class="bg-white shadow-lg rounded-lg overflow-hidden">
+      <!-- Header -->
+      <div class="bg-gradient-to-r from-blue-500 to-blue-600 px-6 py-8">
+        <h1 class="text-3xl font-bold text-white mb-2">🔐 Google Meet OAuth2 Setup</h1>
+        <p class="text-blue-100">Configure Gmail B (Google One) for Google Meet integration</p>
+      </div>
+
+      <!-- Content -->
+      <div class="px-6 py-8">
+        <!-- Status Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+          <!-- Credentials Status -->
+          <div class="border-2 rounded-lg p-4 <%= @configured ? 'border-green-500 bg-green-50' : 'border-red-500 bg-red-50' %>">
+            <div class="flex items-center mb-2">
+              <span class="text-2xl mr-2"><%= @configured ? '✅' : '❌' %></span>
+              <h3 class="font-semibold text-gray-800">OAuth2 Credentials</h3>
+            </div>
+            <p class="text-sm text-gray-600">
+              <%= @configured ? 'Credentials file found' : 'Credentials file not found' %>
+            </p>
+          </div>
+
+          <!-- Authorization Status -->
+          <div class="border-2 rounded-lg p-4 <%= @authorized ? 'border-green-500 bg-green-50' : 'border-yellow-500 bg-yellow-50' %>">
+            <div class="flex items-center mb-2">
+              <span class="text-2xl mr-2"><%= @authorized ? '✅' : '⏳' %></span>
+              <h3 class="font-semibold text-gray-800">User Authorization</h3>
+            </div>
+            <p class="text-sm text-gray-600">
+              <%= @authorized ? 'Gmail B is authorized' : 'Waiting for authorization' %>
+            </p>
+          </div>
+        </div>
+
+        <% if @configured && @authorized %>
+          <!-- Success State -->
+          <div class="bg-green-50 border-2 border-green-500 rounded-lg p-6 mb-6">
+            <div class="flex items-start">
+              <span class="text-4xl mr-4">🎉</span>
+              <div>
+                <h3 class="text-xl font-bold text-green-800 mb-2">Google Meet Integration Active!</h3>
+                <p class="text-green-700 mb-4">
+                  Your Gmail B account is now authorized to create Google Meet links for UDI bookings.
+                  All new UDI bookings will automatically get unique Google Meet links.
+                </p>
+                <div class="bg-white rounded p-4 mb-4">
+                  <h4 class="font-semibold text-gray-800 mb-2">✨ What happens now:</h4>
+                  <ul class="list-disc list-inside text-sm text-gray-600 space-y-1">
+                    <li>UDI bookings automatically create events in Gmail A's calendar</li>
+                    <li>Each event gets a unique Google Meet link from Gmail B (unlimited)</li>
+                    <li>Meet links are sent to users via email</li>
+                    <li>No manual intervention needed!</li>
+                  </ul>
+                </div>
+                <%= button_to "🔄 Reset Authorization", manages_reset_oauth_path, method: :post, 
+                    class: "bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded",
+                    data: { confirm: "Are you sure? You'll need to re-authorize Gmail B." } %>
+              </div>
+            </div>
+          </div>
+
+        <% elsif @configured && !@authorized %>
+          <!-- Need Authorization -->
+          <div class="bg-yellow-50 border-2 border-yellow-500 rounded-lg p-6 mb-6">
+            <h3 class="text-xl font-bold text-yellow-800 mb-4">📋 Step 2: Authorize Gmail B</h3>
+            <p class="text-gray-700 mb-4">
+              Click the button below to authorize Gmail B (your Google One account) to create Google Meet links.
+              You'll be redirected to Google's authorization page.
+            </p>
+            
+            <div class="bg-white rounded-lg p-4 mb-4">
+              <h4 class="font-semibold text-gray-800 mb-2">What to do:</h4>
+              <ol class="list-decimal list-inside text-sm text-gray-600 space-y-2">
+                <li>Click "Authorize Gmail B" button below</li>
+                <li>Copy the URL and open in your browser</li>
+                <li>Login with <strong>Gmail B</strong> (your Google One account)</li>
+                <li>Grant calendar permissions</li>
+                <li>Copy the authorization code</li>
+                <li>Paste it below and submit</li>
+              </ol>
+            </div>
+
+            <% if @auth_url %>
+              <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Authorization URL:</label>
+                <div class="flex gap-2">
+                  <input type="text" readonly value="<%= @auth_url %>" 
+                         class="flex-1 px-3 py-2 border border-gray-300 rounded-md text-sm font-mono"
+                         id="authUrl">
+                  <button onclick="copyAuthUrl()" 
+                          class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md">
+                    📋 Copy
+                  </button>
+                  <a href="<%= @auth_url %>" target="_blank"
+                     class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-md">
+                    🚀 Open
+                  </a>
+                </div>
+              </div>
+
+              <%= form_with url: manages_callback_oauth_path, method: :post, class: "space-y-4" do |f| %>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-2">Authorization Code:</label>
+                  <%= f.text_field :code, 
+                      class: "w-full px-3 py-2 border border-gray-300 rounded-md",
+                      placeholder: "Paste authorization code here",
+                      required: true %>
+                </div>
+                <%= f.submit "✅ Complete Authorization", 
+                    class: "w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-4 rounded-lg" %>
+              <% end %>
+            <% end %>
+          </div>
+
+        <% else %>
+          <!-- Need Credentials Setup -->
+          <div class="bg-red-50 border-2 border-red-500 rounded-lg p-6 mb-6">
+            <h3 class="text-xl font-bold text-red-800 mb-4">📋 Step 1: Setup OAuth2 Credentials</h3>
+            <p class="text-gray-700 mb-4">
+              OAuth2 credentials file is missing. Follow these steps to set it up:
+            </p>
+            
+            <div class="bg-white rounded-lg p-4 mb-4">
+              <h4 class="font-semibold text-gray-800 mb-3">Setup Instructions:</h4>
+              <ol class="list-decimal list-inside text-sm text-gray-600 space-y-3">
+                <li>
+                  <strong>Go to Google Cloud Console:</strong>
+                  <a href="https://console.cloud.google.com/" target="_blank" class="text-blue-600 hover:underline">
+                    https://console.cloud.google.com/
+                  </a>
+                </li>
+                <li>
+                  <strong>Select your project</strong> (talkwith-473623 or create new)
+                </li>
+                <li>
+                  <strong>Enable Google Calendar API</strong> if not already enabled
+                </li>
+                <li>
+                  <strong>Go to Credentials → Create Credentials → OAuth client ID</strong>
+                </li>
+                <li>
+                  <strong>Application type:</strong> Desktop app
+                </li>
+                <li>
+                  <strong>Name:</strong> TalkWith Gmail B OAuth
+                </li>
+                <li>
+                  <strong>Note:</strong> Desktop app will have redirect_uris: ["http://localhost"] - this is correct!<br>
+                  <small class="text-gray-500">We use out-of-band flow (manual code entry), works in dev and production.</small>
+                </li>
+                <li>
+                  <strong>Download JSON</strong> and save as:<br>
+                  <code class="bg-gray-100 px-2 py-1 rounded text-xs">
+                    config/google_oauth_credentials.json
+                  </code>
+                </li>
+                <li>
+                  <strong>Restart</strong> the Rails server
+                </li>
+                <li>
+                  <strong>Return</strong> to this page to authorize Gmail B
+                </li>
+              </ol>
+            </div>
+
+            <div class="bg-blue-50 rounded-lg p-4">
+              <p class="text-sm text-blue-800">
+                💡 <strong>Tip:</strong> Make sure you download credentials for a <strong>Desktop app</strong>, 
+                not a Web application or Service account.
+              </p>
+            </div>
+          </div>
+        <% end %>
+
+        <!-- Back Button -->
+        <div class="mt-8">
+          <%= link_to "← Back to Manage", manage_appointments_path, 
+              class: "text-blue-600 hover:text-blue-800 font-medium" %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function copyAuthUrl() {
+    const input = document.getElementById('authUrl');
+    input.select();
+    document.execCommand('copy');
+    alert('✅ Authorization URL copied to clipboard!');
+  }
+</script>

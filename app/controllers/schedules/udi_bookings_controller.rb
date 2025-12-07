@@ -27,6 +27,8 @@ module Schedules
       # Validate and set time based on selected slot
       if validate_and_set_slot_time
         if @booking.save
+          # Trigger Google Calendar sync manually since after_commit might not detect is_approved change
+          SyncGoogleCalendarJob.perform_later(@booking)
           AppointmentMailer.new_appointment(@booking, appointment_url(@booking.slug)).deliver_later
           redirect_to root_path, notice: "🎯 UDI x ITB session booked successfully! Check your email for confirmation."
         else

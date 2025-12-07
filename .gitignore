@@ -41,3 +41,6 @@
 
 # Google Service Account credentials
 config/google_service_account.json
+config/google_oauth_credentials.json
+config/google_oauth_token.yaml
+config/google_oauth_token.json
