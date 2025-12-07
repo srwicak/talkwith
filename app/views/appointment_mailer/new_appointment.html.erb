@@ -42,29 +42,29 @@
       </div>
       
       <div style="background: #e8f5e8; padding: 15px; border-radius: 8px; margin: 15px 0; border: 2px solid #4CAF50;">
-        <h3 style="margin-top: 0; color: #2E7D32;">🎥 Meeting Information</h3>
-        <% if @appointment.meeting_link.present? %>
-          <p><strong>Google Meet:</strong></p>
-          <div style="background: white; padding: 15px; border-radius: 5px; text-align: center;">
-            <a href="<%= @appointment.meeting_link %>" style="display: inline-block; padding: 12px 30px; background: #4285f4; color: white; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">
-              🎥 Join Google Meet
-            </a>
-          </div>
-          <p style="font-size: 12px; color: #666; margin-top: 10px;">
-            💡 Click the button above to join the meeting. The link will be active 15 minutes before the scheduled time.
-          </p>
-        <% else %>
-          <div style="background: #fff3cd; padding: 15px; border-radius: 5px;">
-            <p><strong>⏳ Google Meet link will be available soon</strong></p>
-            <p style="font-size: 12px; color: #666; margin: 5px 0 0 0;">
-              The meeting link is being generated. You'll receive it in your calendar invitation or can check your appointment details page.
+          <h3 style="margin-top: 0; color: #2E7D32;">🎥 Meeting Information</h3>
+          <% if @appointment.meeting_link.present? %>
+            <p><strong>Google Meet:</strong></p>
+            <div style="background: white; padding: 15px; border-radius: 5px; text-align: center;">
+              <a href="<%= @appointment.meeting_link %>" style="display: inline-block; padding: 12px 30px; background: #4285f4; color: white; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">
+                🎥 Join Google Meet
+              </a>
+            </div>
+            <p style="font-size: 12px; color: #666; margin-top: 10px;">
+              💡 You can also find the same Google Meet address on your appointment details page — use the "View Appointment Details" button below (it already includes your secret key).
             </p>
-          </div>
-        <% end %>
-        <p style="font-size: 12px; color: #666; margin-top: 10px;">
-          💡 This is a special UDImpact ITB Hub 1:1 coaching session. Please join 5-10 minutes before the scheduled time.
-        </p>
-      </div>
+          <% else %>
+            <div style="background: #fff3cd; padding: 15px; border-radius: 5px;">
+              <p><strong>⏳ Google Meet link will be available soon</strong></p>
+              <p style="font-size: 12px; color: #666; margin: 5px 0 0 0;">
+                The meeting link is being generated. When ready, it will appear in your calendar invitation and on your appointment details page. Use the "View Appointment Details" button below to open the page — the button contains your secret key so you can access the page directly.
+              </p>
+            </div>
+          <% end %>
+          <p style="font-size: 12px; color: #666; margin-top: 10px;">
+            💡 This is a special UDImpact ITB Hub 1:1 coaching session. Please join 5-10 minutes before the scheduled time.
+          </p>
+        </div>
     <% end %>
 
     <div style="background: #fff3cd; padding: 15px; border-radius: 8px; margin: 15px 0; border-left: 4px solid #ffc107;">
@@ -87,7 +87,7 @@
   </div>
   
   <div class="btn-container" style="text-align: center; margin: 30px 0;">
-    <a href="<%= @show_url %>" class="btn" style="display: inline-block; text-decoration: none; padding: 12px 25px; background: #4caf50; color: #fff; border-radius: 5px; font-size: 16px; font-weight: bold; margin: 5px;">
+    <a href="<%= @show_url %>?secret_key=<%= @appointment.secret_key %>" class="btn" style="display: inline-block; text-decoration: none; padding: 12px 25px; background: #4caf50; color: #fff; border-radius: 5px; font-size: 16px; font-weight: bold; margin: 5px;">
       📄 View Appointment Details
     </a>
     <br>
